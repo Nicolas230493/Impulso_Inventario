@@ -1,0 +1,14 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<div class="d-flex justify-content-between mb-3"><h1 class="h4">Plantillas y catálogo de desposte</h1>
+<form method="post">{% csrf_token %}<button class="btn btn-outline-primary" name="accion" value="precargar">Precargar catálogo de pollería</button></form></div>
+<div class="row g-3">
+<div class="col-lg-7"><div class="card card-body"><h2 class="h6">Plantillas (versiones)</h2>
+<table class="table table-sm mb-0"><thead><tr><th>Nombre</th><th>Versión</th><th>Entrada</th><th>Vigente desde</th><th></th></tr></thead><tbody>
+{% for p in plantillas %}<tr class="{% if not p.activa %}text-secondary{% endif %}"><td><a href="{% url 'desposte:plantilla' p.pk %}">{{ p.nombre }}</a></td><td>v{{ p.version }}{% if p.activa %} <span class="badge text-bg-success">vigente</span>{% endif %}</td><td>{{ p.producto_entrada.nombre }}</td><td>{{ p.vigente_desde|date:"d/m/Y" }}</td><td><a href="{% url 'productos:lista' %}?clase=resultante">cortes</a></td></tr>
+{% empty %}<tr><td colspan="5" class="text-secondary">Sin plantillas: usá «Precargar catálogo de pollería».</td></tr>{% endfor %}</tbody></table></div></div>
+<div class="col-lg-5"><div class="card card-body"><h2 class="h6">Categorías de merma</h2>
+<ul class="small">{% for c in categorias %}<li>{{ c.nombre }} — <span class="text-secondary">{{ c.get_imputacion_display }}</span></li>{% endfor %}</ul>
+<form method="post" action="{% url 'desposte:categoria_nueva' %}">{% csrf_token %}{% include "nucleo/_campos.html" with form=form_categoria %}<button class="btn btn-sm btn-primary">Agregar categoría</button></form></div></div>
+</div>
+{% endblock %}

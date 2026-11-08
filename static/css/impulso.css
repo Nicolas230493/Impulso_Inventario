@@ -1,0 +1,9 @@
+.sidebar { width: 240px; min-height: 100vh; }
+.sidebar .nav-link { padding: .3rem .6rem; border-radius: .3rem; font-size: .92rem; }
+.sidebar .nav-link.active, .sidebar .nav-link:hover { background: rgba(255,255,255,.12); }
+.min-vw-0 { min-width: 0; }
+.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tablet .btn-xl { font-size: 1.4rem; padding: 1rem 1.6rem; }
+.tablet .form-control, .tablet .form-select { font-size: 1.3rem; padding: .7rem; }
+.tarjeta-corte { cursor: default; }
+.balance-barra { height: 2rem; }

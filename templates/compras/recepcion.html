@@ -1,0 +1,34 @@
+{% extends "base/base.html" %}
+{% block body_class %}tablet{% endblock %}
+{% block contenido %}
+<div class="d-flex flex-wrap justify-content-between gap-2 mb-2"><h1 class="h4">Recepción {{ rec.numero|default:"(borrador)" }} · {{ rec.proveedor }}</h1><span>{% if rec.estado == "borrador" %}<a class="btn btn-outline-primary btn-sm me-2" href="{% url 'mercaderia:recepcion_escaneo' rec.pk %}">Escanear bultos</a>{% endif %}<span class="badge fs-6 text-bg-{% if rec.estado == 'confirmada' %}success{% else %}light border{% endif %}">{{ rec.get_estado_display }}</span></span></div>
+<p class="small text-secondary">{{ rec.fecha_hora|date:"d/m/Y H:i" }} · Depósito {{ rec.deposito }} · Remito {{ rec.remito|default:"—" }}{% if rec.temperatura is not None %} · {{ rec.temperatura|num:1 }} °C{% endif %}{% if rec.orden %} · OC <a href="{% url 'compras:orden' rec.orden_id %}">{{ rec.orden.numero }}</a>{% endif %}{% if rec.foto_remito %} · <a href="{{ rec.foto_remito.url }}">foto del remito</a>{% endif %}</p>
+{% if lineas %}
+<form method="post">{% csrf_token %}
+{{ lineas.management_form }}{{ costos.management_form }}
+{% for f in lineas %}
+<div class="card card-body mb-2">{{ f.id }}{% if f.non_field_errors %}<div class="text-danger">{{ f.non_field_errors }}</div>{% endif %}
+<div class="row g-2">
+  <div class="col-md-4"><label class="form-label small">Producto</label>{{ f.producto }}</div>
+  <div class="col-md-2"><label class="form-label small">Unidades</label>{{ f.unidades }}</div>
+  <div class="col-md-3"><label class="form-label small">Peso declarado</label>{{ f.peso_declarado }}</div>
+  <div class="col-md-3"><label class="form-label small fw-semibold">Peso recibido</label>{{ f.peso_recibido }}{{ f.peso_recibido.errors }}</div>
+  <div class="col-md-3"><label class="form-label small">Precio unitario</label>{{ f.precio_unitario }}</div>
+  <div class="col-md-3"><label class="form-label small">Control</label>{{ f.resultado }}</div>
+  <div class="col-md-6"><label class="form-label small">Observación</label>{{ f.observacion }}</div>
+  <div class="col-md-4"><label class="form-label small">Lote del proveedor</label>{{ f.lote_proveedor }}</div>
+  <div class="col-md-4"><label class="form-label small">Vencimiento</label>{{ f.fecha_vencimiento }}</div>
+  <div class="col-md-4 d-flex align-items-end gap-3">{% if f.instance.pk %}<span class="small">Costo final: <strong>{{ f.instance.costo_unitario_final|pesos:4|default:"—" }}</strong></span>{% endif %}<label class="small">{{ f.DELETE }} Quitar</label></div>
+</div></div>
+{% endfor %}
+<h2 class="h6 mt-3">Costos adicionales (se prorratean)</h2>
+<table class="table table-sm"><tbody>{% for f in costos %}<tr>{{ f.id }}<td>{{ f.concepto }}</td><td>{{ f.descripcion }}</td><td>{{ f.importe }}</td><td>{{ f.criterio }}</td><td>{{ f.DELETE }}</td></tr>{% endfor %}</tbody></table>
+<div class="d-flex gap-2"><button class="btn btn-outline-secondary btn-xl" name="accion" value="guardar">Guardar</button><button class="btn btn-success btn-xl" name="accion" value="confirmar">Confirmar recepción</button></div>
+</form>
+{% else %}
+<table class="table table-sm"><thead><tr><th>Producto</th><th class="num">Unid.</th><th class="num">Declarado</th><th class="num">Recibido</th><th class="num">Precio</th><th class="num">Adicional</th><th class="num">Costo final</th><th>Control</th><th>Lote</th></tr></thead><tbody>
+{% for l in lineas_confirmadas %}<tr><td>{{ l.producto.nombre }}</td><td class="num">{{ l.unidades }}</td><td class="num">{{ l.peso_declarado|num:3 }}</td><td class="num">{{ l.peso_recibido|num:3 }}</td><td class="num">{{ l.precio_unitario|pesos:4 }}</td><td class="num">{{ l.costo_adicional|pesos }}</td><td class="num">{{ l.costo_unitario_final|pesos:4 }}</td><td>{{ l.get_resultado_display }}{% if l.observacion %}<div class="small text-secondary">{{ l.observacion }}</div>{% endif %}</td><td>{% if l.lote_generado %}<a href="{% url 'lotes:detalle' l.lote_generado_id %}">{{ l.lote_generado }}</a>{% endif %}</td></tr>{% endfor %}
+</tbody></table>
+{% if rec.movimiento %}<a href="{% url 'inventario:movimiento' rec.movimiento_id %}">Ver movimiento de stock {{ rec.movimiento.numero }}</a>{% endif %}
+{% endif %}
+{% endblock %}

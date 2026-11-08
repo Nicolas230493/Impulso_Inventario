@@ -1,0 +1,23 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<div class="d-flex justify-content-between mb-3"><h1 class="h4">{{ producto.nombre }} <small class="text-secondary">{{ producto.codigo }}</small></h1>
+<div class="d-flex gap-2"><a class="btn btn-outline-secondary" href="{% url 'inventario:kardex_buscar' %}?producto={{ producto.pk }}">Kardex</a><a class="btn btn-outline-secondary" href="{% url 'mercaderia:presentaciones' producto.pk %}">Presentaciones</a>{% if producto.tiene_variantes and not producto.padre_id %}<a class="btn btn-outline-secondary" href="{% url 'mercaderia:variantes' producto.pk %}">Variantes</a>{% endif %}<a class="btn btn-primary" href="{% url 'productos:editar' producto.pk %}">Editar</a></div></div>
+<div class="row g-3">
+<div class="col-lg-6"><div class="card card-body"><dl class="row mb-0 small">
+<dt class="col-5">Clase / tipo</dt><dd class="col-7">{{ producto.get_clase_display }} · {{ producto.get_tipo_display }}</dd>
+<dt class="col-5">Unidad base</dt><dd class="col-7">{{ producto.unidad_base }}</dd>
+<dt class="col-5">Precio de venta</dt><dd class="col-7">{{ producto.precio_venta|pesos }}</dd>
+<dt class="col-5">Stock mín. / máx.</dt><dd class="col-7">{{ producto.stock_minimo|num:3 }} / {{ producto.stock_maximo|num:3 }}</dd>
+<dt class="col-5">Lote / vencimiento</dt><dd class="col-7">{{ producto.controla_lote|yesno:"Sí,No" }} / {{ producto.controla_vencimiento|yesno:"Sí,No" }}{% if producto.vida_util_dias %} ({{ producto.vida_util_dias }} días){% endif %}</dd>
+<dt class="col-5">Conservación</dt><dd class="col-7">{{ producto.perfil_conservacion|default:"—" }}</dd>
+</dl></div>
+<div class="card card-body mt-3"><h2 class="h6">Conversiones de unidad</h2>
+<ul class="small">{% for c in producto.conversiones.all %}<li>{{ c }}</li>{% empty %}<li class="text-secondary">Sin conversiones.</li>{% endfor %}</ul>
+<form method="post" class="row g-2">{% csrf_token %}<div class="col">{{ form_conv.unidad_origen }}</div><div class="col">{{ form_conv.factor }}</div><div class="col">{{ form_conv.unidad_destino }}</div><div class="col-auto"><button class="btn btn-outline-primary">Agregar</button></div></form></div>
+</div>
+<div class="col-lg-6"><div class="card card-body"><h2 class="h6">Stock</h2>
+<table class="table table-sm"><thead><tr><th>Depósito</th><th>Lote</th><th class="num">Cantidad</th><th class="num">Reservada</th><th class="num">Costo</th></tr></thead><tbody>
+{% for s in stocks %}<tr><td>{{ s.deposito }}</td><td>{{ s.lote|default:"" }}</td><td class="num">{{ s.cantidad|num:3 }}</td><td class="num">{{ s.cantidad_reservada|num:3 }}</td><td class="num">{{ s.costo_promedio|pesos:4 }}</td></tr>{% empty %}<tr><td colspan="5" class="text-secondary">Sin stock.</td></tr>{% endfor %}
+</tbody></table></div></div>
+</div>
+{% endblock %}

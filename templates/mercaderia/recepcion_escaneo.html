@@ -1,0 +1,23 @@
+{% extends "base/base.html" %}{% load formato %}
+{% block body_class %}tablet{% endblock %}
+{% block contenido %}
+<div class="d-flex flex-wrap justify-content-between gap-2 mb-2"><h1 class="h4">Escaneo · {{ rec.proveedor }}</h1>
+<a class="btn btn-outline-secondary btn-sm" href="{% url 'compras:recepcion' rec.pk %}">Ver como formulario (precios, lotes, costos)</a></div>
+<p class="small text-secondary">Depósito {{ rec.deposito }}{% if rec.orden %} · OC <a href="{% url 'compras:orden' rec.orden_id %}">{{ rec.orden.numero }}</a>{% endif %}{% if rec.remito %} · Remito {{ rec.remito }}{% endif %}</p>
+<form method="post" class="card card-body mb-3" style="max-width:700px">{% csrf_token %}
+  <div class="row g-2 align-items-end">
+    <div class="col-8"><label class="form-label small">Código (EAN, DUN-14, código interno o etiqueta de balanza)</label>
+      <input name="codigo" class="form-control form-control-lg" autofocus autocomplete="off" required></div>
+    <div class="col-2"><label class="form-label small">Bultos</label><input name="bultos" type="number" value="1" class="form-control form-control-lg"></div>
+    <div class="col-2"><button class="btn btn-primary btn-lg w-100">Sumar</button></div>
+  </div>
+  <div class="form-text">Para descontar un escaneo de más, poné −1 en bultos.</div>
+</form>
+<div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>Producto</th><th>Presentación</th><th class="num">Bultos</th><th class="num">Recibido (unidad base)</th><th class="num">Pendiente en la orden</th><th class="num">Diferencia</th></tr></thead><tbody>
+{% for f in filas %}<tr class="{% if f.diferencia and f.diferencia < 0 %}table-warning{% elif f.diferencia and f.diferencia > 0 %}table-info{% endif %}">
+<td>{{ f.producto.nombre }}</td><td>{{ f.presentacion.nombre|default:"unidad" }}</td><td class="num">{{ f.bultos|default_if_none:"" }}</td>
+<td class="num">{{ f.recibido|num:3 }} {{ f.producto.unidad_base }}</td><td class="num">{% if f.pedido is not None %}{{ f.pedido|num:3 }}{% endif %}</td><td class="num">{% if f.diferencia is not None %}{{ f.diferencia|num:3 }}{% endif %}</td></tr>
+{% empty %}<tr><td colspan="6" class="text-secondary">Todavía no se escaneó nada.</td></tr>{% endfor %}
+</tbody></table></div>
+<form method="post" onsubmit="return confirm('¿Confirmar la recepción? Lo no escaneado queda pendiente en la orden.')">{% csrf_token %}<button name="accion" value="confirmar" class="btn btn-success">Confirmar recepción</button></form>
+{% endblock %}

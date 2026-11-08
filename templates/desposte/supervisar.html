@@ -1,0 +1,25 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<div class="d-flex justify-content-between mb-2"><h1 class="h4">Control de orden {{ orden.numero }} {% include "desposte/_estado.html" with o=orden %}</h1><a href="{% url 'desposte:orden' orden.pk %}">Pantalla del operario</a></div>
+<div class="row g-3 mb-3">
+  <div class="col-md-3"><div class="card card-body"><div class="small text-secondary">Entrada</div><div class="fs-5">{{ c.peso_entrada|kg }}</div><div class="small">{{ c.unidades }} unidades{% if c.rendimiento_por_unidad %} · {{ c.rendimiento_por_unidad|num:3 }} kg aprov./unidad{% endif %}</div></div></div>
+  <div class="col-md-3"><div class="card card-body"><div class="small text-secondary">R / M / D</div><div class="fs-5">{{ c.rendimiento|num:4 }} % · {{ c.merma|num:4 }} % · {{ c.diferencia|num:3 }}</div></div></div>
+  <div class="col-md-3"><div class="card card-body"><div class="small text-secondary">Costo conjunto</div><div class="fs-5">{{ c.costo_conjunto|pesos }}</div><div class="small">{{ c.costo_unitario_entrada|pesos:4 }}/kg</div></div></div>
+  <div class="col-md-3"><div class="card card-body"><div class="small text-secondary">Merma real / estándar</div><div class="fs-5">{{ c.merma_real_kg|num:3 }} / {{ c.merma_estandar_kg|num:3 }} kg</div><div class="small {% if c.perdida %}text-danger{% endif %}">Anormal {{ c.merma_anormal_kg|num:3 }} kg → pérdida {{ c.perdida|pesos }}</div></div></div>
+</div>
+{% if c.alertas %}<div class="alert alert-warning"><strong>Fuera del rendimiento estándar</strong> (exige comentario y segunda firma):<ul class="mb-0">{% for a in c.alertas %}<li>{{ a }}</li>{% endfor %}</ul></div>{% endif %}
+{% if c.pendiente_kg %}<div class="alert alert-danger">Hay {{ c.pendiente_kg|kg }} pendientes de revisión: reclasificalos antes de aprobar.</div>{% endif %}
+<table class="table table-sm"><thead><tr><th>Corte</th><th>Criterio</th><th class="num">Kg</th><th class="num">Real %</th><th class="num">Estándar %</th><th class="num">Precio ref.</th><th class="num">Costo asignado</th><th class="num">Costo/kg</th></tr></thead><tbody>
+{% for l in c.lineas %}<tr class="{% if l.fuera_tolerancia %}table-warning{% endif %}"><td>{{ l.salida.producto.nombre }}</td><td class="small">{{ l.criterio }}</td><td class="num">{{ l.peso|num:3 }}</td><td class="num">{{ l.rendimiento_real|num:2 }}</td><td class="num">{% if l.rendimiento_estandar is not None %}{{ l.rendimiento_estandar|num:2 }} ± {{ l.tolerancia|num:2 }}{% endif %}</td><td class="num">{{ l.precio_referencia|pesos }}</td><td class="num">{{ l.costo_asignado|pesos }}</td><td class="num">{{ l.costo_kg|pesos:2 }}</td></tr>{% endfor %}
+</tbody><tfoot><tr><th colspan="6">Distribuido ({{ c.get_metodo_display|default:c.metodo }}) + pérdida</th><th class="num">{{ c.total_asignado|pesos }} + {{ c.perdida|pesos }}</th><th></th></tr></tfoot></table>
+<h2 class="h6">Diferencias clasificadas</h2>
+<ul>{% for m in c.mermas_por_categoria %}<li>{{ m.categoria }}: {{ m.peso|kg }} ({{ m.imputacion }})</li>{% empty %}<li class="text-secondary">Sin diferencias.</li>{% endfor %}</ul>
+{% if orden.estado == 'control' or orden.estado == 'aprobada' %}
+<div class="row g-3">
+<div class="col-md-6"><form method="post" action="{% url 'desposte:accion' orden.pk 'aprobar' %}" class="card card-body">{% csrf_token %}
+<label class="form-label">{% if orden.estado == 'aprobada' %}Segunda firma (otro supervisor){% else %}Comentario del supervisor{% if c.alertas %} (obligatorio){% endif %}{% endif %}</label>
+<textarea name="comentario" class="form-control mb-2" rows="2" {% if c.alertas and orden.estado == 'control' %}required{% endif %}></textarea>
+<button class="btn btn-success">{% if orden.estado == 'aprobada' %}Firmar y actualizar stock{% else %}Aprobar{% endif %}</button></form></div>
+{% if orden.estado == 'control' %}<div class="col-md-6"><form method="post" action="{% url 'desposte:accion' orden.pk 'devolver' %}" class="card card-body">{% csrf_token %}<label class="form-label">Devolver al operario</label><textarea name="comentario" class="form-control mb-2" rows="2" required></textarea><button class="btn btn-outline-secondary">Devolver con comentario</button></form></div>{% endif %}
+</div>{% endif %}
+{% endblock %}

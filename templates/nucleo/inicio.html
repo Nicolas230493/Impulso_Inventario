@@ -1,0 +1,8 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<h1 class="h4 mb-3">Tablero · {{ empresa }}</h1>
+{% if alertas %}<div class="card card-body border-warning mb-3"><div class="d-flex justify-content-between"><h2 class="h6">Alertas abiertas</h2>{% if "calidad" in request.modulos %}<a class="small" href="{% url 'calidad:alertas' %}">Ver todas</a>{% endif %}</div>
+<ul class="small mb-0">{% for a in alertas %}<li class="{% if a.nivel == 'critica' %}text-danger fw-semibold{% endif %}">{% if a.url %}<a href="{{ a.url }}" class="text-reset">{{ a.mensaje }}</a>{% else %}{{ a.mensaje }}{% endif %}</li>{% endfor %}</ul></div>{% endif %}
+{% if r %}{% include "inventario/_resumen.html" %}{% else %}<p class="text-secondary">Bienvenido.</p>{% endif %}
+{% for bloque in extras %}{% include bloque.plantilla with d=bloque.datos %}{% endfor %}
+{% endblock %}

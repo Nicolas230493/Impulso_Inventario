@@ -1,0 +1,9 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<h1 class="h4 mb-3">Empresa</h1>
+<form method="post" class="row g-3">{% csrf_token %}
+  <div class="col-lg-6"><div class="card card-body"><h2 class="h6">Datos</h2>{% include "nucleo/_campos.html" with form=form %}</div></div>
+  <div class="col-lg-6"><div class="card card-body"><h2 class="h6">Configuración</h2>{% include "nucleo/_campos.html" with form=form_config %}</div></div>
+  <div class="col-12"><button class="btn btn-primary">Guardar</button></div>
+</form>
+{% endblock %}

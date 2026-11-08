@@ -1,0 +1,14 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<h1 class="h4 mb-3">{{ titulo }}</h1>
+<form method="post">{% csrf_token %}
+<div class="card card-body mb-3">{% include "nucleo/_campos.html" with form=cabecera %}</div>
+{{ lineas.management_form }}
+{% if lineas.non_form_errors %}<div class="alert alert-danger">{{ lineas.non_form_errors|join:" " }}</div>{% endif %}
+<div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>Producto</th><th style="width:140px">Cantidad</th><th style="width:110px">Unidad</th><th>Lote</th>{% if not es_transferencia %}<th style="width:160px">Costo unitario</th>{% endif %}</tr></thead><tbody>
+{% for f in lineas %}<tr><td>{{ f.producto }}{{ f.producto.errors }}</td><td>{{ f.cantidad }}{{ f.cantidad.errors }}</td><td>{{ f.unidad }}</td><td>{{ f.lote }}{{ f.lote.errors }}</td>{% if not es_transferencia %}<td>{{ f.costo_unitario }}</td>{% endif %}</tr>{% endfor %}
+</tbody></table></div>
+<p class="small text-secondary">Las cantidades se convierten a la unidad base del producto. En las entradas, si no indicás costo, se toma el costo promedio vigente.</p>
+<div class="d-flex gap-2">{% if es_transferencia %}<button class="btn btn-primary">Confirmar transferencia</button>{% else %}<button class="btn btn-primary" name="accion" value="confirmar">Confirmar</button><button class="btn btn-outline-secondary" name="accion" value="borrador">Guardar borrador</button>{% endif %}<a class="btn btn-link" href="{% url 'inventario:movimientos' %}">Cancelar</a></div>
+</form>
+{% endblock %}

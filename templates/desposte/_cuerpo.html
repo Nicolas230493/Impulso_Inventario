@@ -1,0 +1,82 @@
+<div id="cuerpo">
+{% if request.headers.HX_Request %}{% for m in messages %}<div class="alert alert-{% if m.tags == 'error' %}danger{% else %}{{ m.tags|default:'info' }}{% endif %}">{{ m }}</div>{% endfor %}{% endif %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+  <h1 class="h3 mb-0">Orden {{ orden.numero }} {% include "desposte/_estado.html" with o=orden %}</h1>
+  <div class="small text-secondary">{{ orden.plantilla }} · {{ orden.get_metodo_distribucion_display }} · Operario {{ orden.operario }}{% if orden.temperatura_sector is not None %} · Sector {{ orden.temperatura_sector|num:1 }} °C{% endif %}</div>
+</div>
+{% if orden.comentario_supervisor %}<div class="alert alert-warning py-2"><strong>Supervisor:</strong> {{ orden.comentario_supervisor|linebreaksbr }}</div>{% endif %}
+
+{# 2 · Entrada #}
+<div class="card mb-3"><div class="card-body">
+  <div class="d-flex justify-content-between align-items-center"><h2 class="h5 mb-0">2 · Entrada</h2>
+  <div class="fs-4">{{ b.entrada|kg }}{% with u=orden.entradas.all.0.unidades %}{% if u %} · {{ u }} unidades{% endif %}{% endwith %}</div></div>
+  {% for e in entradas %}
+  <div class="mt-2"><strong>{{ e.producto.nombre }}</strong> · lote {% if e.lote %}<a href="{% url 'lotes:detalle' e.lote_id %}">{{ e.lote }}</a>{% endif %} · reservado {{ e.peso_reservado|kg }}
+    <div class="small text-secondary">{% for p in e.pesajes.all %}{% if not p.anulado %}#{{ p.secuencia }} {{ p.peso_neto|num:3 }}{% if p.unidades %} ({{ p.unidades }} u){% endif %} · {% endif %}{% empty %}Sin pesajes de entrada.{% endfor %}</div>
+    {% if orden.estado == 'en_proceso' %}
+    <form class="row g-2 mt-1" hx-post="{% url 'desposte:pesaje' orden.pk %}" hx-target="#cuerpo" hx-swap="outerHTML" method="post" action="{% url 'desposte:pesaje' orden.pk %}">{% csrf_token %}
+      <input type="hidden" name="entrada" value="{{ e.pk }}">
+      <div class="col-4"><input name="peso" class="form-control" placeholder="Peso kg" inputmode="decimal" required></div>
+      <div class="col-3"><input name="tara" class="form-control" placeholder="Tara" inputmode="decimal"></div>
+      <div class="col-2"><input name="unidades" class="form-control" placeholder="Pollos" inputmode="numeric"></div>
+      <div class="col-3"><button class="btn btn-outline-primary w-100">Agregar pesaje</button></div>
+    </form>{% endif %}
+  </div>{% endfor %}
+</div></div>
+
+{# 3 · Cortes #}
+{% if orden.estado != 'borrador' and orden.estado != 'reservada' %}
+<h2 class="h5">3 · Cortes</h2>
+<div class="row g-3 mb-3">
+{% for s in salidas %}
+<div class="col-md-6 col-xl-4"><div class="card tarjeta-corte h-100 {% for l in c.lineas %}{% if l.salida.pk == s.pk and l.fuera_tolerancia %}border-warning{% endif %}{% endfor %}"><div class="card-body">
+  <div class="d-flex justify-content-between"><strong>{{ s.producto.nombre }}</strong><span class="badge text-bg-light border">{{ s.get_tipo_resultado_display }}</span></div>
+  <div class="fs-3 my-1">{{ s.peso_neto|num:3 }} <small class="fs-6">kg</small></div>
+  {% for l in c.lineas %}{% if l.salida.pk == s.pk %}<div class="small {% if l.fuera_tolerancia %}text-warning-emphasis fw-semibold{% else %}text-secondary{% endif %}">Real {{ l.rendimiento_real|num:2 }} %{% if l.rendimiento_estandar is not None %} · estándar {{ l.rendimiento_estandar|num:2 }} % ± {{ l.tolerancia|num:2 }}{% endif %}</div>{% endif %}{% endfor %}
+  <div class="small text-secondary">{% for p in s.pesajes.all %}{% if not p.anulado %}<span class="me-2">#{{ p.secuencia }} {{ p.peso_neto|num:3 }}{% if orden.estado == 'pesaje_final' or orden.estado == 'en_proceso' %}<button class="btn btn-link btn-sm p-0 ms-1 text-danger" hx-post="{% url 'desposte:anular_pesaje' orden.pk p.pk %}" hx-target="#cuerpo" hx-swap="outerHTML" hx-confirm="¿Anular este pesaje?" title="Anular">×</button>{% endif %}</span>{% endif %}{% endfor %}</div>
+  {% if orden.estado == 'pesaje_final' or orden.estado == 'en_proceso' %}
+  <form class="d-flex gap-2 mt-2" hx-post="{% url 'desposte:pesaje' orden.pk %}" hx-target="#cuerpo" hx-swap="outerHTML" method="post" action="{% url 'desposte:pesaje' orden.pk %}">{% csrf_token %}
+    <input type="hidden" name="salida" value="{{ s.pk }}"><input name="peso" class="form-control" placeholder="kg" inputmode="decimal" required>
+    <input name="tara" class="form-control" style="max-width:90px" placeholder="tara" inputmode="decimal"><button class="btn btn-primary text-nowrap">Agregar pesaje</button>
+  </form>{% endif %}
+  {% if s.lote_generado %}<div class="small mt-2">Lote <a href="{% url 'lotes:detalle' s.lote_generado_id %}">{{ s.lote_generado }}</a> · {{ s.costo_kg|pesos:2 }}/kg</div>{% endif %}
+</div></div></div>
+{% endfor %}
+</div>
+
+{# 4 · Balance #}
+<div class="card mb-3"><div class="card-body">
+  <h2 class="h5">4 · Balance</h2>
+  <div class="progress balance-barra mb-2" role="progressbar" aria-label="Balance">
+    <div class="progress-bar bg-success" style="width: {{ pct_salidas|stringformat:'.2f' }}%">Salidas {{ b.salidas|num:3 }}</div>
+    <div class="progress-bar bg-info" style="width: {{ pct_clasificado|stringformat:'.2f' }}%">Clasificado {{ b.clasificado|num:3 }}</div>
+  </div>
+  <div class="row text-center">
+    <div class="col"><div class="small text-secondary">Entrada</div><div class="fs-5">{{ b.entrada|num:3 }}</div></div>
+    <div class="col"><div class="small text-secondary">Salidas</div><div class="fs-5">{{ b.salidas|num:3 }}</div></div>
+    <div class="col"><div class="small text-secondary">Clasificado</div><div class="fs-5">{{ b.clasificado|num:3 }}</div></div>
+    <div class="col"><div class="small text-secondary">D (sin clasificar)</div><div class="fs-4 fw-semibold {% if b.diferencia != 0 %}text-danger{% else %}text-success{% endif %}">{{ b.diferencia|num:3 }}</div></div>
+    <div class="col"><div class="small text-secondary">R / M</div><div class="fs-5">{{ c.rendimiento|num:2 }} % / {{ c.merma|num:2 }} %</div></div>
+  </div>
+  {% if diferencias %}<table class="table table-sm mt-3 mb-0"><tbody>{% for dif in diferencias %}<tr><td>{{ dif.categoria }}</td><td class="small text-secondary">{{ dif.categoria.get_imputacion_display }}</td><td class="num">{{ dif.peso|kg }}</td><td>{{ dif.observacion }}</td><td>{% if puede_supervisar and orden.estado != 'aprobada' and orden.estado != 'stock_actualizado' and orden.estado != 'cerrada' and orden.estado != 'revertida' and orden.estado != 'cancelada' %}<button class="btn btn-link btn-sm text-danger p-0" hx-post="{% url 'desposte:quitar_diferencia' orden.pk dif.pk %}" hx-target="#cuerpo" hx-swap="outerHTML">quitar</button>{% endif %}</td></tr>{% endfor %}</tbody></table>{% endif %}
+  {% if puede_supervisar and b.diferencia > 0 %}{% if orden.estado == 'pesaje_final' or orden.estado == 'en_proceso' or orden.estado == 'control' %}
+  <form class="row g-2 mt-2" hx-post="{% url 'desposte:clasificar' orden.pk %}" hx-target="#cuerpo" hx-swap="outerHTML" method="post" action="{% url 'desposte:clasificar' orden.pk %}">{% csrf_token %}
+    <div class="col-md-4">{{ form_clasificar.categoria }}</div><div class="col-md-2">{{ form_clasificar.peso }}</div><div class="col-md-4">{{ form_clasificar.observacion }}</div>
+    <div class="col-md-2"><button class="btn btn-outline-primary w-100">Clasificar</button></div>
+  </form>{% endif %}{% elif b.diferencia > 0 and orden.estado == 'pesaje_final' %}<p class="small text-secondary mt-2 mb-0">Un supervisor debe clasificar la diferencia antes de enviar a control.</p>{% endif %}
+</div></div>
+{% endif %}
+
+{# 5 · Acciones #}
+<div class="d-flex flex-wrap gap-2 mb-3">
+{% if orden.estado == 'reservada' %}<form method="post" action="{% url 'desposte:accion' orden.pk 'iniciar' %}">{% csrf_token %}<button class="btn btn-primary btn-xl">Iniciar proceso</button></form>{% endif %}
+{% if orden.estado == 'en_proceso' %}<form method="post" action="{% url 'desposte:accion' orden.pk 'finalizar_entrada' %}">{% csrf_token %}<button class="btn btn-primary btn-xl">Terminar pesaje de entrada</button></form>{% endif %}
+{% if orden.estado == 'pesaje_final' %}<form method="post" action="{% url 'desposte:accion' orden.pk 'enviar_control' %}">{% csrf_token %}<button class="btn btn-success btn-xl" {% if b.diferencia != 0 %}disabled title="Clasificá la diferencia"{% endif %}>5 · Enviar a control</button></form>{% endif %}
+{% if orden.estado == 'control' or orden.estado == 'aprobada' %}{% if puede_supervisar %}<a class="btn btn-warning btn-xl" href="{% url 'desposte:supervisar' orden.pk %}">Revisar como supervisor</a>{% endif %}{% endif %}
+{% if puede_supervisar %}{% if orden.estado == 'borrador' or orden.estado == 'reservada' or orden.estado == 'en_proceso' or orden.estado == 'pesaje_final' or orden.estado == 'control' %}
+<details><summary class="btn btn-outline-danger">Cancelar orden</summary><form method="post" action="{% url 'desposte:accion' orden.pk 'cancelar' %}" class="card card-body mt-2">{% csrf_token %}<input name="comentario" class="form-control mb-2" placeholder="Motivo" required><button class="btn btn-danger">Cancelar y liberar reserva</button></form></details>{% endif %}{% endif %}
+{% if orden.estado == 'stock_actualizado' or orden.estado == 'cerrada' %}{% if puede_supervisar and orden.estado == 'stock_actualizado' or puede_administrar %}
+<details><summary class="btn btn-outline-danger">Revertir orden</summary><div class="card card-body mt-2">{% if no_reversible %}<div class="text-danger">{{ no_reversible }}</div>{% else %}<form method="post" action="{% url 'desposte:accion' orden.pk 'revertir' %}">{% csrf_token %}<input name="comentario" class="form-control mb-2" placeholder="Motivo" required><button class="btn btn-danger">Generar contramovimiento</button></form>{% endif %}</div></details>{% endif %}{% endif %}
+</div>
+{% if orden.movimiento %}<p class="small">Movimiento de stock: <a href="{% url 'inventario:movimiento' orden.movimiento_id %}">{{ orden.movimiento.numero }}</a>{% if orden.movimiento_reversion %} · revertido por <a href="{% url 'inventario:movimiento' orden.movimiento_reversion_id %}">{{ orden.movimiento_reversion.numero }}</a>{% endif %}</p>{% endif %}
+</div>

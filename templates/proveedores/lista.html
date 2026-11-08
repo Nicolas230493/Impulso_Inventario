@@ -1,0 +1,9 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<div class="d-flex justify-content-between mb-3"><h1 class="h4">Proveedores</h1><a class="btn btn-primary" href="{% url 'proveedores:nuevo' %}">Nuevo</a></div>
+<form class="mb-3" style="max-width:360px"><input name="q" class="form-control" placeholder="Buscar" value="{{ request.GET.q }}"></form>
+<table class="table table-sm table-hover"><thead><tr><th>Razón social</th><th>CUIT</th><th>Contacto</th><th>Habilitación</th><th>Calificación</th></tr></thead><tbody>
+{% for p in proveedores %}<tr><td><a href="{% url 'proveedores:detalle' p.pk %}">{{ p.razon_social }}</a>{% if not p.activo %} <span class="badge text-bg-secondary">inactivo</span>{% endif %}</td><td>{{ p.cuit }}</td><td>{{ p.contacto }} {{ p.telefono }}</td>
+<td>{{ p.habilitacion_numero }}{% if p.habilitacion_vencimiento %} <span class="small text-secondary">vence {{ p.habilitacion_vencimiento|date:"d/m/Y" }}</span>{% endif %}</td><td>{{ p.calificacion|default:"—" }}</td></tr>
+{% empty %}<tr><td colspan="5" class="text-secondary">Sin proveedores.</td></tr>{% endfor %}</tbody></table>
+{% endblock %}

@@ -1,0 +1,1 @@
+<span class="badge {% if o.estado == 'stock_actualizado' or o.estado == 'cerrada' %}text-bg-success{% elif o.estado == 'control' or o.estado == 'aprobada' %}text-bg-warning{% elif o.estado == 'cancelada' or o.estado == 'revertida' %}text-bg-secondary{% else %}text-bg-primary{% endif %}">{{ o.get_estado_display }}</span>

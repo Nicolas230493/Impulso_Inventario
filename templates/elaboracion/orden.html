@@ -1,0 +1,43 @@
+{% extends "base/base.html" %}{% load formato %}
+{% block body_class %}tablet{% endblock %}
+{% block contenido %}
+<div class="d-flex flex-wrap justify-content-between gap-2 mb-2"><h1 class="h4">Elaboración {{ o.numero }} · {{ o.receta }}</h1>
+<span class="badge fs-6 text-bg-{% if o.estado == 'stock_actualizado' or o.estado == 'cerrada' %}success{% elif o.estado == 'borrador' %}light border{% else %}secondary{% endif %}">{{ o.get_estado_display }}</span></div>
+<p class="small text-secondary">{{ o.tandas|num:3 }} tandas · insumos desde {{ o.deposito_origen }} · producido a {{ o.deposito_destino }} · operario {{ o.operario }}{% if o.supervisor %} · aprobó {{ o.supervisor }}{% endif %}</p>
+{% if o.comentario_supervisor %}<div class="alert alert-info py-2">{{ o.comentario_supervisor }}</div>{% endif %}
+{% if no_reversible %}<div class="alert alert-warning py-2">{{ no_reversible }}</div>{% endif %}
+<form method="post">{% csrf_token %}
+<div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>Insumo</th><th class="num">Teórico</th><th class="num">Real</th><th>Lote</th><th class="num">Costo unit.</th></tr></thead><tbody>
+{% for e in entradas %}<tr><td>{{ e.producto.nombre }}{% if e.es_insumo %} <span class="badge text-bg-light border">empaque</span>{% endif %}
+{% if editable and e.cantidad_teorica %}{% for k, sust in sustitutos.items %}{% if k == e.producto_id %}<select name="sust_{{ e.pk }}" class="form-select form-select-sm mt-1" style="max-width:16rem"><option value="">sin reemplazo</option><option value="{{ sust.pk }}">reemplazar por {{ sust.nombre }}</option></select>{% endif %}{% endfor %}{% endif %}</td>
+<td class="num">{% if e.cantidad_teorica %}{{ e.cantidad_teorica|num:3 }} {{ e.producto.unidad_base }}{% endif %}</td>
+<td class="num">{% if editable %}<input name="real_{{ e.pk }}" value="{{ e.peso_neto|stringformat:'s' }}" inputmode="decimal" class="form-control form-control-sm text-end ms-auto" style="width:7rem">{% else %}{{ e.peso_neto|num:3 }}{% endif %}</td>
+<td>{{ e.lote|default:"" }}</td><td class="num">{% if not editable %}{{ e.costo_unitario|pesos:4 }}{% endif %}</td></tr>{% endfor %}
+</tbody></table></div>
+<h2 class="h6 mt-3">Desvío real contra teórico (tolerancia ± {{ o.receta.tolerancia_desvio|num:1 }} %)</h2>
+<table class="table table-sm w-auto"><tbody>{% for d in desvios %}{% if d.teorico %}<tr class="{% if d.fuera %}table-warning{% endif %}"><td>{{ d.producto.nombre }}</td><td class="num">{{ d.real|num:3 }} / {{ d.teorico|num:3 }}</td><td class="num">{% if d.desvio is not None %}{{ d.desvio|num:2 }} %{% endif %}</td></tr>{% endif %}{% endfor %}</tbody></table>
+<div class="card card-body mb-3" style="max-width:900px"><h2 class="h6">Producido</h2><div class="row g-2">
+<div class="col-md-4"><label class="form-label small">{{ principal.producto.nombre }} ({{ principal.producto.unidad_base }}) · teórico {{ teorico.cantidad|num:3 }}</label>{% if editable %}<input name="producido" value="{{ principal.peso_neto|stringformat:'s' }}" inputmode="decimal" class="form-control">{% else %}<div class="fs-5">{{ principal.peso_neto|num:3 }}</div>{% endif %}</div>
+<div class="col-md-3"><label class="form-label small">Unidades{% if teorico.unidades %} · teórico {{ teorico.unidades }}{% endif %}</label>{% if editable %}<input name="unidades" value="{{ principal.unidades }}" inputmode="numeric" class="form-control">{% else %}<div class="fs-5">{{ principal.unidades }}</div>{% endif %}</div>
+{% if sub %}<div class="col-md-4"><label class="form-label small">{{ sub.producto.nombre }} · teórico {{ teorico.subproducto|num:3 }}</label>{% if editable %}<input name="subproducto" value="{{ sub.peso_neto|stringformat:'s' }}" inputmode="decimal" class="form-control">{% else %}<div class="fs-5">{{ sub.peso_neto|num:3 }}</div>{% endif %}</div>{% endif %}
+</div></div>
+{% if editable %}
+<div class="d-flex flex-wrap gap-2 align-items-end mb-3">
+<button name="accion" value="guardar" class="btn btn-outline-primary">Guardar</button>
+{% if puede_supervisar %}<div><label class="form-label small mb-0">Comentario (obligatorio si hay desvíos fuera de tolerancia)</label><input name="comentario" class="form-control" style="min-width:22rem"></div>
+<button name="accion" value="aprobar" class="btn btn-success">Aprobar y actualizar stock</button>{% endif %}
+</div>{% endif %}
+</form>
+{% if not editable and principal.lote_generado %}
+<div class="card card-body mb-3" style="max-width:900px"><h2 class="h6">Resultado</h2>
+<p class="mb-1">Lote <strong>{{ principal.lote_generado }}</strong>{% if sub and sub.lote_generado %} · subproducto {{ sub.lote_generado }}{% endif %}</p>
+<p class="mb-1">Materia prima e insumos {{ o.costo_conjunto|pesos }} · costos de proceso {{ o.costo_proceso|pesos }}</p>
+<p class="mb-0">Costo por {{ principal.producto.unidad_base }}: <strong>{{ unitario.por_unidad_base|pesos:4 }}</strong>{% if unitario.por_unidad %} · por unidad {{ unitario.por_unidad|pesos:4 }}{% endif %}</p>
+{% if costos %}<table class="table table-sm w-auto mt-2 mb-0"><tbody>{% for c in costos %}<tr><td>{{ c.concepto }}</td><td>{{ c.get_criterio_display }}</td><td class="num">{{ c.base|num:3 }}</td><td class="num">{{ c.importe|pesos }}</td></tr>{% endfor %}</tbody></table>{% endif %}
+</div>{% endif %}
+{% if puede_supervisar %}
+{% if editable %}<form method="post" class="d-flex gap-2" style="max-width:600px">{% csrf_token %}<input name="motivo" class="form-control" placeholder="Motivo de la cancelación" required><button name="accion" value="cancelar" class="btn btn-outline-danger">Cancelar orden</button></form>
+{% elif o.estado == 'stock_actualizado' or o.estado == 'cerrada' %}{% if not no_reversible %}<form method="post" class="d-flex gap-2" style="max-width:600px">{% csrf_token %}<input name="motivo" class="form-control" placeholder="Motivo de la reversión" required><button name="accion" value="revertir" class="btn btn-outline-danger">Revertir</button></form>{% endif %}{% endif %}
+{% endif %}
+<p class="mt-3"><a href="{% url 'elaboracion:ordenes' %}">Volver a las órdenes</a></p>
+{% endblock %}

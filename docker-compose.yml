@@ -1,0 +1,53 @@
+x-app: &app
+  build: .
+  environment: &env
+    DJANGO_SETTINGS_MODULE: config.settings.prod
+    SECRET_KEY: ${SECRET_KEY:-cambiar-en-produccion}
+    DEBUG: "False"
+    SECURE_COOKIES: ${SECURE_COOKIES:-False}
+    ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
+    DATABASE_URL: postgres://impulso:impulso@db:5432/impulso
+    REDIS_URL: redis://redis:6379/0
+  depends_on:
+    db:
+      condition: service_healthy
+    redis:
+      condition: service_started
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: impulso
+      POSTGRES_PASSWORD: impulso
+      POSTGRES_DB: impulso
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U impulso"]
+      interval: 2s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+
+  web:
+    <<: *app
+    environment:
+      <<: *env
+      RUN_MIGRATIONS: "1"
+    command: >
+      sh -c "gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --access-logfile -"
+    ports:
+      - "${WEB_PORT:-8000}:8000"
+
+  worker:
+    <<: *app
+    command: celery -A config worker -l info
+
+  beat:
+    <<: *app
+    command: celery -A config beat -l info
+
+volumes:
+  pgdata:

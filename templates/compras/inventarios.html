@@ -1,0 +1,7 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<h1 class="h4 mb-3">Inventario físico</h1>
+<div class="row g-3"><div class="col-lg-5"><form method="post" class="card card-body">{% csrf_token %}<h2 class="h6">Iniciar conteo</h2>{% include "nucleo/_campos.html" %}<button class="btn btn-primary">Iniciar (congela el stock del sistema)</button></form></div>
+<div class="col-lg-7"><table class="table table-sm"><thead><tr><th>Número</th><th>Fecha</th><th>Depósito</th><th>Tipo</th><th>Estado</th><th>Responsable</th></tr></thead><tbody>
+{% for i in inventarios %}<tr><td><a href="{% url 'compras:inventario' i.pk %}">{{ i.numero }}</a></td><td>{{ i.fecha|date:"d/m/Y" }}</td><td>{{ i.deposito.nombre }}</td><td>{{ i.get_tipo_display }}</td><td>{{ i.get_estado_display }}</td><td>{{ i.responsable }}</td></tr>{% empty %}<tr><td colspan="6" class="text-secondary">Sin inventarios.</td></tr>{% endfor %}</tbody></table></div></div>
+{% endblock %}

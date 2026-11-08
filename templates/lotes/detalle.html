@@ -1,0 +1,24 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<div class="d-flex justify-content-between mb-3"><h1 class="h4">Lote {{ lote.codigo }} · {{ lote.producto.nombre }}</h1>
+<span class="badge fs-6 {% if lote.estado == 'disponible' %}text-bg-success{% elif lote.estado == 'bloqueado' %}text-bg-warning{% elif lote.estado == 'vencido' %}text-bg-danger{% else %}text-bg-secondary{% endif %}">{{ lote.get_estado_display }}</span></div>
+<div class="row g-3">
+<div class="col-lg-4"><div class="card card-body small"><dl class="mb-0">
+<dt>Proveedor</dt><dd>{% if lote.proveedor %}<a href="{% url 'proveedores:detalle' lote.proveedor_id %}">{{ lote.proveedor }}</a>{% else %}—{% endif %}</dd>
+<dt>Recepción</dt><dd>{% if lote.recepcion %}<a href="{% url 'compras:recepcion' lote.recepcion_id %}">{{ lote.recepcion.numero }}</a> · remito {{ lote.recepcion.remito|default:"—" }}{% if lote.recepcion.temperatura is not None %} · {{ lote.recepcion.temperatura|num:1 }} °C{% endif %}{% else %}—{% endif %}</dd>
+<dt>Lote del proveedor</dt><dd>{{ lote.lote_proveedor|default:"—" }}</dd>
+<dt>Fechas</dt><dd>Recepción {{ lote.fecha_recepcion|date:"d/m/Y" }} · Elaboración {{ lote.fecha_elaboracion|date:"d/m/Y"|default:"—" }} · <strong>Vence {{ lote.fecha_vencimiento|date:"d/m/Y"|default:"—" }}</strong></dd>
+<dt>Cantidad inicial</dt><dd>{{ lote.cantidad_inicial|num:3 }} {{ lote.producto.unidad_base }}{% if lote.unidades_iniciales %} · {{ lote.unidades_iniciales }} unidades{% endif %}</dd>
+<dt>Costo de origen</dt><dd>{{ lote.costo_unitario_origen|pesos:4 }}</dd>
+{% if lote.motivo_bloqueo %}<dt>Motivo de bloqueo</dt><dd class="text-danger">{{ lote.motivo_bloqueo }}</dd>{% endif %}
+</dl></div>
+{% if lote.estado == 'bloqueado' or lote.estado == 'disponible' %}
+<form method="post" action="{% if lote.estado == 'bloqueado' %}{% url 'lotes:cambiar' lote.pk 'liberar' %}{% else %}{% url 'lotes:cambiar' lote.pk 'bloquear' %}{% endif %}" class="card card-body mt-3">{% csrf_token %}{% include "nucleo/_campos.html" with form=form %}<button class="btn {% if lote.estado == 'bloqueado' %}btn-success{% else %}btn-outline-danger{% endif %}">{% if lote.estado == 'bloqueado' %}Liberar lote{% else %}Bloquear lote{% endif %}</button></form>
+{% endif %}
+</div>
+<div class="col-lg-8">
+<div class="card card-body mb-3"><h2 class="h6">Dónde está hoy</h2><table class="table table-sm mb-0">{% for s in stock.filas %}<tr><td>{{ s.deposito }}</td><td class="num">{{ s.cantidad|num:3 }}</td><td class="num text-secondary">reservado {{ s.cantidad_reservada|num:3 }}</td></tr>{% empty %}<tr><td class="text-secondary">Sin stock.</td></tr>{% endfor %}</table></div>
+<div class="card card-body"><h2 class="h6">Movimientos del lote</h2><table class="table table-sm small mb-0"><thead><tr><th>Fecha</th><th>Número</th><th>Tipo</th><th>Depósito</th><th class="num">Entrada</th><th class="num">Salida</th><th class="num">Saldo</th></tr></thead><tbody>
+{% for r in kardex.filas %}<tr><td>{{ r.fecha|date:"d/m/Y H:i" }}</td><td><a href="{% url 'inventario:movimiento' r.movimiento.pk %}">{{ r.numero }}</a></td><td>{{ r.tipo }}</td><td>{{ r.deposito.nombre }}</td><td class="num">{% if r.entrada %}{{ r.entrada|num:3 }}{% endif %}</td><td class="num">{% if r.salida %}{{ r.salida|num:3 }}{% endif %}</td><td class="num">{{ r.saldo|num:3 }}</td></tr>{% endfor %}
+</tbody></table></div></div></div>
+{% endblock %}

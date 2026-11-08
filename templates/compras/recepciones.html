@@ -1,0 +1,8 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<div class="d-flex flex-wrap justify-content-between gap-2 mb-3"><h1 class="h4">Recepciones</h1>
+<div class="d-flex gap-2"><a class="btn btn-outline-secondary" href="{% url 'compras:diferencias' %}">Diferencias por proveedor</a><a class="btn btn-outline-secondary" href="{% url 'compras:devolucion_nueva' %}">Devolución a proveedor</a><a class="btn btn-primary" href="{% url 'compras:recepcion_nueva' %}">Nueva recepción</a></div></div>
+<table class="table table-sm table-hover"><thead><tr><th>Número</th><th>Fecha</th><th>Proveedor</th><th>Remito</th><th>OC</th><th>Depósito</th><th class="num">Temp.</th><th>Estado</th></tr></thead><tbody>
+{% for r in recepciones %}<tr><td><a href="{% url 'compras:recepcion' r.pk %}">{{ r.numero|default:"(borrador)" }}</a></td><td>{{ r.fecha_hora|date:"d/m/Y H:i" }}</td><td>{{ r.proveedor }}</td><td>{{ r.remito }}</td><td>{{ r.orden.numero|default:"" }}</td><td>{{ r.deposito.nombre }}</td><td class="num">{% if r.temperatura is not None %}{{ r.temperatura|num:1 }} °C{% endif %}</td><td>{{ r.get_estado_display }}</td></tr>
+{% empty %}<tr><td colspan="8" class="text-secondary">Sin recepciones.</td></tr>{% endfor %}</tbody></table>
+{% endblock %}

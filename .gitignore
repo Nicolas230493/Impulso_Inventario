@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.coverage
+htmlcov/
+staticfiles/
+media/
+
+# Copias de la base para pruebas (no se versionan)
+datos_prueba/
+*.dump

@@ -1,0 +1,6 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<h1 class="h4 mb-3">Categorías</h1>
+<div class="row g-3"><div class="col-md-6"><ul class="list-group">{% for c in categorias %}<li class="list-group-item">{{ c }}</li>{% empty %}<li class="list-group-item text-secondary">Sin categorías</li>{% endfor %}</ul></div>
+<div class="col-md-6"><form method="post" class="card card-body">{% csrf_token %}{% include "nucleo/_campos.html" %}<button class="btn btn-primary">Agregar</button></form></div></div>
+{% endblock %}

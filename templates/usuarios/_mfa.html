@@ -1,0 +1,7 @@
+<div style="max-width: 460px">
+  <h1 class="h4">Verificación en dos pasos</h1>
+  <p>Escaneá el código con tu app autenticadora (Google Authenticator, Authy, etc.) e ingresá el código de 6 dígitos.</p>
+  <img alt="Código QR" src="data:image/svg+xml;base64,{{ qr }}" width="200" height="200" class="bg-white p-2 border">
+  <p class="small text-secondary mt-2">Clave manual: <code>{{ secreto }}</code></p>
+  <form method="post" class="card card-body">{% csrf_token %}{% include "nucleo/_campos.html" %}<button class="btn btn-primary">Confirmar</button></form>
+</div>

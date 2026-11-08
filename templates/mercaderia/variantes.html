@@ -1,0 +1,17 @@
+{% extends "base/base.html" %}{% load formato %}
+{% block contenido %}
+<div class="d-flex justify-content-between mb-3"><h1 class="h4">Variantes de {{ padre.nombre }}</h1>
+<div class="d-flex flex-wrap gap-2">{% if matriz %}<a class="btn btn-outline-primary btn-sm" href="{% url 'mercaderia:matriz_compra' padre.pk %}">Comprar</a><a class="btn btn-outline-primary btn-sm" href="{% url 'mercaderia:matriz_transferencia' padre.pk %}">Transferir</a><a class="btn btn-outline-primary btn-sm" href="{% url 'mercaderia:matriz_conteo' padre.pk %}">Contar</a><a class="btn btn-outline-primary btn-sm" href="{% url 'mercaderia:reporte_variantes' padre.pk %}">Ventas por variante</a>{% endif %}<a class="btn btn-outline-secondary btn-sm" href="{% url 'productos:detalle' padre.pk %}">Ficha</a></div></div>
+{% if matriz %}<h2 class="h6">Stock en matriz{% if matriz.eje_filas %} ({{ matriz.eje_filas }}{% if matriz.eje_columnas %} × {{ matriz.eje_columnas }}{% endif %}){% endif %}</h2>
+<div class="table-responsive"><table class="table table-sm table-bordered w-auto"><thead><tr><th></th>{% for c in matriz.columnas %}<th class="num">{{ c|default:"Stock" }}</th>{% endfor %}<th class="num">Total</th></tr></thead><tbody>
+{% for f, celdas, total in matriz.tabla %}<tr><th>{{ f }}</th>{% for v in celdas %}<td class="num">{{ v|num:0 }}</td>{% endfor %}<th class="num">{{ total|num:0 }}</th></tr>{% endfor %}
+</tbody><tfoot><tr><th>Total</th>{% for c in matriz.columnas %}{% for k, v in matriz.total_columnas.items %}{% if k == c %}<th class="num">{{ v|num:0 }}</th>{% endif %}{% endfor %}{% endfor %}<th class="num">{{ matriz.total|num:0 }}</th></tr></tfoot></table></div>{% endif %}
+<h2 class="h6 mt-3">Variantes</h2>
+<table class="table table-sm"><thead><tr><th>Código</th><th>Nombre</th><th>Códigos de barras</th></tr></thead><tbody>
+{% for v in variantes %}<tr><td>{{ v.codigo }}</td><td><a href="{% url 'productos:detalle' v.pk %}">{{ v.nombre }}</a></td><td>{% for c in v.codigos_barras.all %}{{ c.codigo }} {% endfor %}</td></tr>
+{% empty %}<tr><td colspan="3" class="text-secondary">Sin variantes todavía.</td></tr>{% endfor %}</tbody></table>
+{% if ejes %}<form method="post" class="card card-body" style="max-width:900px">{% csrf_token %}<h2 class="h6">Generar variantes (se crea una por combinación)</h2>
+<div class="row g-3">{% for e in ejes %}<div class="col-md-4"><div class="fw-semibold small mb-1">{{ e.nombre }}</div>{% for v in e.valores %}<label class="me-2 small"><input type="checkbox" name="eje_{{ e.pk }}" value="{{ v }}"> {{ v }}</label>{% endfor %}</div>{% endfor %}</div>
+<div class="mt-2"><button class="btn btn-primary">Crear variantes</button></div></form>
+{% else %}<p class="text-secondary">No hay ejes de variante cargados (talle, color…).</p>{% endif %}
+{% endblock %}

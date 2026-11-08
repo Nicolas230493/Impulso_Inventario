@@ -1,0 +1,10 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<h1 class="h4 mb-3">Devolución a proveedor</h1>
+<form method="post">{% csrf_token %}<div class="card card-body mb-3">{% include "nucleo/_campos.html" %}</div>
+{{ lineas.management_form }}
+<table class="table table-sm"><thead><tr><th>Producto</th><th>Depósito</th><th>Lote</th><th>Cantidad</th></tr></thead><tbody>
+{% for f in lineas %}<tr><td>{{ f.producto }}</td><td>{{ f.deposito }}</td><td>{{ f.lote }}</td><td>{{ f.cantidad }}</td></tr>{% endfor %}</tbody></table>
+<p class="small text-secondary">Sale al costo del lote original.</p><button class="btn btn-primary">Confirmar devolución</button></form>
+<h2 class="h6 mt-4">Últimas devoluciones</h2><ul class="small">{% for d in devoluciones %}<li>{{ d.numero }} · {{ d.proveedor }} · {{ d.fecha|date:"d/m/Y" }} · {{ d.motivo }}</li>{% empty %}<li class="text-secondary">Sin devoluciones.</li>{% endfor %}</ul>
+{% endblock %}

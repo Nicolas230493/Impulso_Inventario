@@ -1,0 +1,8 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<h1 class="h4 mb-3">Bandeja del supervisor</h1>
+<table class="table table-hover align-middle"><thead><tr><th>Orden</th><th>Operario</th><th>Plantilla</th><th class="num">Entrada</th><th class="num">R %</th><th class="num">M %</th><th>Alertas</th><th>Estado</th></tr></thead><tbody>
+{% for o, c in filas %}<tr><td><a href="{% url 'desposte:supervisar' o.pk %}">{{ o.numero }}</a></td><td>{{ o.operario }}</td><td>{{ o.plantilla }}</td><td class="num">{{ c.peso_entrada|kg }}</td><td class="num">{{ c.rendimiento|num:2 }}</td><td class="num">{{ c.merma|num:2 }}</td>
+<td>{% if c.alertas %}<span class="badge text-bg-warning">{{ c.alertas|length }} fuera de estándar</span>{% endif %}{% if c.pendiente_kg %} <span class="badge text-bg-danger">pendiente de revisión</span>{% endif %}</td><td>{% include "desposte/_estado.html" %}</td></tr>
+{% empty %}<tr><td colspan="8" class="text-secondary">No hay órdenes pendientes.</td></tr>{% endfor %}</tbody></table>
+{% endblock %}

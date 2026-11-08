@@ -1,0 +1,12 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<h1 class="h4 mb-3">Orden de compra</h1>
+<form method="post">{% csrf_token %}
+<div class="card card-body mb-3">{% include "nucleo/_campos.html" %}</div>
+{{ lineas.management_form }}{% if lineas.non_form_errors %}<div class="alert alert-danger">{{ lineas.non_form_errors|join:" " }}</div>{% endif %}
+<table class="table table-sm"><thead><tr><th>Producto</th><th>Unidades</th><th>Cantidad (unidad base)</th><th>Precio unitario</th><th>Quitar</th></tr></thead><tbody>
+{% for f in lineas %}<tr>{{ f.id }}<td>{{ f.producto }}{{ f.producto.errors }}</td><td>{{ f.unidades_pedidas }}</td><td>{{ f.cantidad_pedida }}</td><td>{{ f.precio_unitario }}</td><td>{{ f.DELETE }}</td></tr>{% endfor %}
+</tbody></table>
+<button class="btn btn-primary">Guardar</button> <a class="btn btn-link" href="{% url 'compras:ordenes' %}">Volver</a>
+</form>
+{% endblock %}

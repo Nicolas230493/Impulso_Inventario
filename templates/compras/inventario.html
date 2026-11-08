@@ -1,0 +1,17 @@
+{% extends "base/base.html" %}
+{% block body_class %}tablet{% endblock %}
+{% block contenido %}
+<div class="d-flex justify-content-between mb-3"><h1 class="h4">Inventario {{ inv.numero }} · {{ inv.deposito }}</h1><span class="badge fs-6 text-bg-light border">{{ inv.get_estado_display }}</span></div>
+<form method="post">{% csrf_token %}
+{% if formset %}{{ formset.management_form }}{% endif %}
+<table class="table align-middle"><thead><tr><th>Producto</th><th>Lote</th><th class="num">Sistema</th><th style="width:180px">Contado</th><th class="num">Diferencia</th><th class="num">Valor</th><th>Motivo</th></tr></thead><tbody>
+{% if formset %}{% for f in formset %}<tr>{{ f.id }}<td>{{ f.instance.producto.nombre }}</td><td>{{ f.instance.lote|default:"" }}</td><td class="num">{{ f.instance.cantidad_sistema|num:3 }}</td><td>{{ f.cantidad_contada }}</td><td class="num">{{ f.instance.diferencia|num:3 }}</td><td class="num">{{ f.instance.valor_diferencia|pesos }}</td><td>{{ f.motivo }}</td></tr>{% endfor %}
+{% else %}{% for l in lineas %}<tr><td>{{ l.producto.nombre }}</td><td>{{ l.lote|default:"" }}</td><td class="num">{{ l.cantidad_sistema|num:3 }}</td><td class="num">{{ l.cantidad_contada|num:3 }}</td><td class="num">{{ l.diferencia|num:3 }}</td><td class="num">{{ l.valor_diferencia|pesos }}</td><td>{{ l.motivo }}</td></tr>{% endfor %}{% endif %}
+</tbody></table>
+<div class="d-flex gap-2">
+{% if inv.estado == 'en_conteo' %}<button class="btn btn-outline-secondary btn-xl" name="accion" value="guardar">Guardar conteo</button><button class="btn btn-primary btn-xl" name="accion" value="cerrar">Cerrar conteo</button>{% endif %}
+{% if inv.estado == 'pendiente' %}<button class="btn btn-success btn-xl" name="accion" value="aprobar">Aprobar y ajustar</button>{% endif %}
+{% if inv.estado == 'en_conteo' or inv.estado == 'pendiente' %}<input name="motivo" class="form-control" style="max-width:260px" placeholder="Motivo de anulación"><button class="btn btn-outline-danger" name="accion" value="anular">Anular</button>{% endif %}
+</div></form>
+{% if inv.movimiento %}<p class="mt-3">Ajuste generado: <a href="{% url 'inventario:movimiento' inv.movimiento_id %}">{{ inv.movimiento.numero }}</a> (autorizó {{ inv.aprobado_por }})</p>{% endif %}
+{% endblock %}

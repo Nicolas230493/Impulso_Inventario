@@ -1,0 +1,12 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<div class="d-flex justify-content-between mb-3"><h1 class="h4">Lista de {{ lista.proveedor }} — {{ lista.vigencia_desde|date:"d/m/Y" }}</h1>
+<a class="btn btn-outline-secondary btn-sm" href="{% url 'mercaderia:listas' %}">Volver</a></div>
+<p>Estado: <strong>{{ lista.get_estado_display }}</strong> · {{ lista.filas }} filas · {{ lista.actualizadas }} actualizadas · {{ lista.sin_vincular }} sin vincular</p>
+{% if lista.error %}<div class="alert alert-danger">{{ lista.error }}</div>{% endif %}
+{% if sin_vincular %}<h2 class="h6">Líneas sin vincular</h2>
+<table class="table table-sm align-middle"><thead><tr><th>Código proveedor</th><th>Descripción</th><th>Código de barras</th><th>Vincular con</th></tr></thead><tbody>
+{% for l in sin_vincular %}<tr><td>{{ l.codigo_proveedor }}</td><td>{{ l.descripcion }}</td><td>{{ l.codigo_barras }}</td>
+<td><form method="post" class="d-flex gap-1">{% csrf_token %}<input type="hidden" name="linea" value="{{ l.pk }}"><input name="producto" class="form-control form-control-sm" placeholder="Código o código de barras" required><button class="btn btn-sm btn-outline-primary">Vincular</button></form></td></tr>{% endfor %}
+</tbody></table>{% endif %}
+{% endblock %}

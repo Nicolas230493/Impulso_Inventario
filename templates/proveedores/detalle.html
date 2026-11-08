@@ -1,0 +1,16 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<div class="d-flex justify-content-between mb-3"><h1 class="h4">{{ proveedor.razon_social }} <small class="text-secondary">{{ proveedor.cuit }}</small></h1><a class="btn btn-outline-primary" href="{% url 'proveedores:editar' proveedor.pk %}">Editar</a></div>
+<div class="row g-3">
+<div class="col-lg-4"><div class="card card-body small"><dl class="mb-0">
+<dt>Contacto</dt><dd>{{ proveedor.contacto|default:"—" }} {{ proveedor.telefono }} {{ proveedor.email }}</dd>
+<dt>Dirección</dt><dd>{{ proveedor.direccion|default:"—" }} {{ proveedor.localidad }}</dd>
+<dt>Habilitación sanitaria</dt><dd>{{ proveedor.habilitacion_numero|default:"—" }}{% if proveedor.habilitacion_vencimiento %} (vence {{ proveedor.habilitacion_vencimiento|date:"d/m/Y" }}){% endif %}</dd>
+<dt>Calificación</dt><dd>{{ proveedor.calificacion|default:"—" }}</dd></dl></div>
+<div class="card card-body mt-3"><h2 class="h6">Productos y último precio</h2><table class="table table-sm small mb-0">{% for pp in productos %}<tr><td>{{ pp.producto.nombre }}</td><td class="num">{{ pp.ultimo_precio|pesos:4 }}</td><td>{{ pp.fecha_ultimo_precio|date:"d/m/Y" }}</td></tr>{% empty %}<tr><td class="text-secondary">Sin compras.</td></tr>{% endfor %}</table></div></div>
+<div class="col-lg-8"><div class="card card-body"><h2 class="h6">Historial de recepciones</h2>
+<table class="table table-sm small"><thead><tr><th>Fecha</th><th>Recepción</th><th>Producto</th><th>Lote</th><th class="num">Declarado</th><th class="num">Recibido</th><th class="num">Dif.</th><th>Control</th></tr></thead><tbody>
+{% for l in lineas %}<tr><td>{{ l.recepcion.fecha_hora|date:"d/m/Y" }}</td><td><a href="{% url 'compras:recepcion' l.recepcion_id %}">{{ l.recepcion.numero }}</a></td><td>{{ l.producto.nombre }}</td><td>{% if l.lote_generado %}<a href="{% url 'lotes:detalle' l.lote_generado_id %}">{{ l.lote_generado }}</a>{% endif %}</td><td class="num">{{ l.peso_declarado|num:3 }}</td><td class="num">{{ l.peso_recibido|num:3 }}</td><td class="num {% if l.diferencia_peso > 0 %}text-danger{% endif %}">{{ l.diferencia_peso|num:3 }}</td><td>{{ l.get_resultado_display }}</td></tr>
+{% empty %}<tr><td colspan="8" class="text-secondary">Sin recepciones.</td></tr>{% endfor %}</tbody></table></div></div>
+</div>
+{% endblock %}

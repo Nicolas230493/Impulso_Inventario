@@ -1,0 +1,7 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<h1 class="h4 mb-3">Ajustes pendientes de autorización</h1>
+<table class="table table-sm"><thead><tr><th>Fecha</th><th>Tipo</th><th>Usuario</th><th>Motivo</th><th></th></tr></thead><tbody>
+{% for m in movs %}<tr><td>{{ m.fecha|date:"d/m/Y H:i" }}</td><td>{{ m.tipo }}</td><td>{{ m.usuario }}</td><td>{{ m.motivo }}</td><td><a href="{% url 'inventario:movimiento' m.pk %}">Revisar</a></td></tr>
+{% empty %}<tr><td colspan="5" class="text-secondary">No hay ajustes pendientes.</td></tr>{% endfor %}</tbody></table>
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<h1 class="h4 mb-3">Auditoría</h1>
+<form class="mb-3 d-flex gap-2" style="max-width:420px"><input name="accion" class="form-control" placeholder="Filtrar por acción" value="{{ request.GET.accion }}"><button class="btn btn-outline-secondary">Filtrar</button></form>
+<table class="table table-sm small"><thead><tr><th>Fecha</th><th>Usuario</th><th>Acción</th><th>Objeto</th><th>Antes</th><th>Después</th><th>Motivo</th><th>IP</th></tr></thead><tbody>
+{% for e in pagina %}<tr><td class="text-nowrap">{{ e.fecha|date:"d/m/Y H:i" }}</td><td>{{ e.usuario|default:"sistema" }}</td><td>{{ e.accion }}</td><td>{{ e.objeto_repr }}</td><td><code>{{ e.datos_antes|default:"" }}</code></td><td><code>{{ e.datos_despues|default:"" }}</code></td><td>{{ e.motivo }}</td><td>{{ e.ip|default:"" }}</td></tr>{% endfor %}
+</tbody></table>
+{% include "nucleo/_paginacion.html" %}
+{% endblock %}

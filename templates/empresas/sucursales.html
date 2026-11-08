@@ -1,0 +1,8 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<div class="d-flex justify-content-between mb-3"><h1 class="h4">Sucursales</h1><a class="btn btn-primary" href="{% url 'empresas:sucursal_nueva' %}">Nueva</a></div>
+<table class="table table-sm align-middle"><thead><tr><th>Nombre</th><th>Dirección</th><th>Localidad</th><th>Estado</th><th></th></tr></thead><tbody>
+{% for s in sucursales %}<tr><td>{{ s.nombre }}</td><td>{{ s.direccion }}</td><td>{{ s.localidad }} {{ s.provincia }}</td><td>{% if s.activa %}<span class="badge text-bg-success">Activa</span>{% else %}<span class="badge text-bg-secondary">Inactiva</span>{% endif %}</td>
+<td class="text-end"><a href="{% url 'empresas:sucursal_editar' s.pk %}">Editar</a>{% if s.activa %} · <a href="{% url 'empresas:sucursal_desactivar' s.pk %}">Desactivar</a>{% endif %}</td></tr>{% endfor %}
+</tbody></table>
+{% endblock %}

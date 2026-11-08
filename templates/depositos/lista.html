@@ -1,0 +1,7 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<div class="d-flex justify-content-between mb-3"><h1 class="h4">Depósitos</h1><a class="btn btn-primary" href="{% url 'depositos:nuevo' %}">Nuevo</a></div>
+<table class="table table-sm"><thead><tr><th>Sucursal</th><th>Nombre</th><th>Tipo</th><th>Venta</th><th>Producción</th><th>Estado</th><th></th></tr></thead><tbody>
+{% for d in depositos %}<tr><td>{{ d.sucursal }}</td><td><a href="{% url 'inventario:stock' %}?deposito={{ d.pk }}">{{ d.nombre }}</a></td><td>{{ d.get_tipo_display }}</td><td>{{ d.permite_venta|yesno:"Sí,—" }}</td><td>{{ d.permite_produccion|yesno:"Sí,—" }}</td><td>{{ d.activo|yesno:"Activo,Inactivo" }}</td><td><a href="{% url 'depositos:editar' d.pk %}">Editar</a></td></tr>{% endfor %}
+</tbody></table>
+{% endblock %}

@@ -1,0 +1,11 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<div class="d-flex flex-wrap justify-content-between gap-2 mb-3"><h1 class="h4">Movimientos</h1>
+<div class="d-flex gap-2"><a class="btn btn-outline-primary" href="{% url 'inventario:nuevo' %}?tipo=entrada_manual">Entrada</a><a class="btn btn-outline-primary" href="{% url 'inventario:nuevo' %}?tipo=salida_manual">Salida</a><a class="btn btn-outline-primary" href="{% url 'inventario:transferencia' %}">Transferencia</a><a class="btn btn-outline-primary" href="{% url 'inventario:nuevo' %}?tipo=ajuste_negativo">Ajuste / merma</a></div></div>
+<form class="row g-2 mb-3"><div class="col-md-3"><select name="estado" class="form-select"><option value="">Todos los estados</option>{% for v, n in estados %}<option value="{{ v }}" {% if request.GET.estado == v %}selected{% endif %}>{{ n }}</option>{% endfor %}</select></div><div class="col-auto"><button class="btn btn-outline-secondary">Filtrar</button></div></form>
+<table class="table table-sm table-hover"><thead><tr><th>Fecha</th><th>Número</th><th>Tipo</th><th>Estado</th><th>Usuario</th><th>Motivo</th></tr></thead><tbody>
+{% for m in pagina %}<tr><td>{{ m.fecha|date:"d/m/Y H:i" }}</td><td><a href="{% url 'inventario:movimiento' m.pk %}">{{ m.numero|default:"(borrador)" }}</a></td><td>{{ m.tipo }}</td><td>{% include "inventario/_estado.html" with estado=m.estado texto=m.get_estado_display %}</td><td>{{ m.usuario }}</td><td class="small">{{ m.motivo|truncatechars:60 }}</td></tr>
+{% empty %}<tr><td colspan="6" class="text-secondary">Sin movimientos.</td></tr>{% endfor %}
+</tbody></table>
+{% include "nucleo/_paginacion.html" %}
+{% endblock %}

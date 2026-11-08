@@ -1,0 +1,14 @@
+{% extends "base/base.html" %}{% load formato %}
+{% block contenido %}
+<div class="d-flex flex-wrap justify-content-between gap-2 mb-3"><h1 class="h4">Registros de temperatura</h1><a class="btn btn-outline-secondary btn-sm" href="{% url 'cadena_frio:inicio' %}">Cámaras</a></div>
+<form method="get" class="d-flex flex-wrap gap-2 mb-3"><select name="camara" class="form-select" style="max-width:20rem"><option value="">Todas las cámaras</option>{% for c in camaras %}<option value="{{ c.pk }}" {% if request.GET.camara == c.pk|stringformat:"s" %}selected{% endif %}>{{ c }}</option>{% endfor %}</select>
+<label class="small d-flex align-items-center gap-1"><input type="checkbox" name="pendientes" value="1" {% if request.GET.pendientes %}checked{% endif %}> Solo fuera de rango sin acción</label><button class="btn btn-outline-secondary">Filtrar</button></form>
+<div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>Fecha</th><th>Cámara / etapa</th><th class="num">°C</th><th>Rango</th><th>Responsable</th><th>Acción correctiva</th></tr></thead><tbody>
+{% for r in registros %}<tr id="r{{ r.pk }}" class="{% if r.fuera_de_rango %}{% if r.accion_correctiva %}table-warning{% else %}table-danger{% endif %}{% endif %}">
+<td>{{ r.fecha_hora|date:"d/m/Y H:i" }}</td><td>{% if r.camara %}{{ r.camara }}{% else %}{{ r.get_etapa_display }}{% if r.orden %} · orden {{ r.orden.numero }}{% endif %}{% endif %}</td>
+<td class="num">{{ r.valor|num:1 }}</td><td>{% if r.minimo is not None %}{{ r.minimo }}{% else %}—{% endif %} a {% if r.maximo is not None %}{{ r.maximo }}{% else %}—{% endif %}</td><td>{{ r.responsable }}</td>
+<td>{% if r.accion_correctiva %}{{ r.accion_correctiva }} <span class="small text-secondary">({{ r.accion_por }})</span>{% if r.lotes_bloqueados %}<div class="small">{{ r.lotes_bloqueados }} lotes bloqueados</div>{% endif %}
+{% elif r.fuera_de_rango and puede_registrar %}<form method="post" class="d-flex gap-1">{% csrf_token %}<input type="hidden" name="registro" value="{{ r.pk }}"><input name="accion" class="form-control form-control-sm" placeholder="Qué se hizo" required><button class="btn btn-sm btn-danger">Guardar</button></form>{% endif %}</td></tr>
+{% empty %}<tr><td colspan="6" class="text-secondary">Sin registros.</td></tr>{% endfor %}
+</tbody></table></div>
+{% endblock %}

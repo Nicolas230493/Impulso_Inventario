@@ -1,0 +1,18 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<div class="d-flex flex-wrap justify-content-between gap-2 mb-3"><h1 class="h4">OC {{ oc.numero|default:"(borrador)" }} · {{ oc.proveedor }} <span class="badge text-bg-light border">{{ oc.get_estado_display }}</span></h1>
+<div class="d-flex gap-2">
+{% if oc.estado == 'borrador' %}<a class="btn btn-outline-secondary" href="{% url 'compras:orden_editar' oc.pk %}">Editar</a><form method="post" action="{% url 'compras:orden_accion' oc.pk 'enviar' %}">{% csrf_token %}<button class="btn btn-primary">Enviar</button></form>{% endif %}
+{% if oc.estado == 'enviada' or oc.estado == 'parcial' %}<a class="btn btn-success" href="{% url 'compras:recepcion_nueva' %}?orden={{ oc.pk }}">Recibir</a>{% endif %}
+</div></div>
+<p class="small text-secondary">Fecha {{ oc.fecha|date:"d/m/Y" }} · Esperada {{ oc.fecha_esperada|date:"d/m/Y"|default:"—" }} · Destino {{ oc.deposito_destino }}</p>
+<table class="table table-sm"><thead><tr><th>Producto</th><th class="num">Unid. pedidas</th><th class="num">Unid. recibidas</th><th class="num">Pedido</th><th class="num">Recibido</th><th class="num">Precio</th><th class="num">Subtotal</th></tr></thead><tbody>
+{% for l in lineas %}<tr><td>{{ l.producto.nombre }}</td><td class="num">{{ l.unidades_pedidas }}</td><td class="num">{{ l.unidades_recibidas }}</td><td class="num">{{ l.cantidad_pedida|num:3 }}</td><td class="num">{{ l.cantidad_recibida|num:3 }}</td><td class="num">{{ l.precio_unitario|pesos:4 }}</td><td class="num">{{ l.subtotal|pesos }}</td></tr>{% endfor %}
+</tbody><tfoot><tr><th colspan="6">Total</th><th class="num">{{ oc.total|pesos }}</th></tr></tfoot></table>
+<h2 class="h6 mt-4">Recepciones</h2><ul>{% for r in recepciones %}<li><a href="{% url 'compras:recepcion' r.pk %}">{{ r.numero|default:"(borrador)" }}</a> {{ r.fecha_hora|date:"d/m/Y H:i" }} · {{ r.get_estado_display }}</li>{% empty %}<li class="text-secondary">Sin recepciones.</li>{% endfor %}</ul>
+{% if oc.estado != 'cerrada' and oc.estado != 'cancelada' %}
+<div class="d-flex gap-3 mt-3">
+{% if oc.estado == 'borrador' or oc.estado == 'enviada' %}<details><summary class="btn btn-sm btn-outline-danger">Cancelar orden</summary><form method="post" action="{% url 'compras:orden_accion' oc.pk 'cancelar' %}" class="card card-body mt-2">{% csrf_token %}{% include "nucleo/_campos.html" with form=form_motivo %}<button class="btn btn-danger btn-sm">Cancelar</button></form></details>{% endif %}
+{% if oc.estado != 'borrador' %}<details><summary class="btn btn-sm btn-outline-secondary">Cerrar orden</summary><form method="post" action="{% url 'compras:orden_accion' oc.pk 'cerrar' %}" class="card card-body mt-2">{% csrf_token %}{% include "nucleo/_campos.html" with form=form_motivo %}<button class="btn btn-secondary btn-sm">Cerrar</button></form></details>{% endif %}
+</div>{% endif %}
+{% endblock %}

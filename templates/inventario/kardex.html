@@ -1,0 +1,17 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<h1 class="h4 mb-3">Kardex</h1>
+<form class="row g-2 mb-3 align-items-end">
+  <div class="col-md-4">{{ form.producto.label_tag }}{{ form.producto }}</div><div class="col-md-3">{{ form.deposito.label_tag }}{{ form.deposito }}</div>
+  <div class="col-md-2">{{ form.desde.label_tag }}{{ form.desde }}</div><div class="col-md-2">{{ form.hasta.label_tag }}{{ form.hasta }}</div>
+  <div class="col-md-1"><button class="btn btn-primary w-100">Ver</button></div>
+</form>
+{% if datos %}
+<div class="d-flex justify-content-between align-items-center mb-2"><div>Saldo inicial: <strong>{{ datos.saldo_inicial|num:3 }}</strong> · Saldo final: <strong>{{ datos.saldo_final|num:3 }}</strong>{% if datos.costo_actual is not None %} · Costo promedio actual: <strong>{{ datos.costo_actual|pesos:4 }}</strong>{% endif %}</div>
+<div class="d-flex gap-2"><a class="btn btn-sm btn-outline-secondary" href="?{{ request.GET.urlencode }}&exportar=xlsx">Excel</a><a class="btn btn-sm btn-outline-secondary" href="?{{ request.GET.urlencode }}&exportar=csv">CSV</a></div></div>
+<div class="table-responsive"><table class="table table-sm small"><thead><tr><th>Fecha</th><th>Número</th><th>Tipo</th><th>Depósito</th><th>Lote</th><th class="num">Entrada</th><th class="num">Salida</th><th class="num">Saldo</th><th class="num">Costo unit.</th><th class="num">Costo total</th><th class="num">Costo prom.</th></tr></thead><tbody>
+{% for r in datos.filas %}<tr><td class="text-nowrap">{{ r.fecha|date:"d/m/Y H:i" }}</td><td><a href="{% url 'inventario:movimiento' r.movimiento.pk %}">{{ r.numero }}</a></td><td>{{ r.tipo }}</td><td>{{ r.deposito.nombre }}</td><td>{{ r.lote|default:"" }}</td><td class="num">{% if r.entrada %}{{ r.entrada|num:3 }}{% endif %}</td><td class="num">{% if r.salida %}{{ r.salida|num:3 }}{% endif %}</td><td class="num">{{ r.saldo|num:3 }}</td><td class="num">{{ r.costo_unitario|pesos:4 }}</td><td class="num">{{ r.costo_total|pesos }}</td><td class="num">{{ r.costo_promedio|pesos:4 }}</td></tr>
+{% empty %}<tr><td colspan="11" class="text-secondary">Sin movimientos en el período.</td></tr>{% endfor %}
+</tbody></table></div>
+{% endif %}
+{% endblock %}

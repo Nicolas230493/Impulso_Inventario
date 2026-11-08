@@ -1,0 +1,24 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<div class="d-flex flex-wrap justify-content-between gap-2 mb-3"><h1 class="h4">{{ titulo }}</h1>
+<div class="d-flex flex-wrap gap-2">{% for texto, url in acciones %}<a class="btn btn-outline-primary btn-sm" href="{{ url }}">{{ texto }}</a>{% endfor %}</div></div>
+{% if nota %}<p class="text-secondary small">{{ nota }}</p>{% endif %}
+{% for alerta in alertas %}<div class="alert alert-warning py-2">{{ alerta }}</div>{% endfor %}
+{% for f in formularios %}
+<form method="{{ f.metodo|default:'post' }}" action="{{ f.action|default:'' }}" enctype="multipart/form-data" class="card card-body mb-3" style="max-width:{{ f.ancho|default:'900px' }}">{% if f.metodo != 'get' %}{% csrf_token %}{% endif %}
+  {% if f.titulo %}<h2 class="h6">{{ f.titulo }}</h2>{% endif %}
+  {% if f.form %}<div class="row g-2">{% for campo in f.form.visible_fields %}<div class="col-md-{{ f.col|default:4 }}">{% if campo.widget_type == "checkbox" %}<div class="form-check mt-4">{{ campo }} <label class="form-check-label" for="{{ campo.id_for_label }}">{{ campo.label }}</label></div>{% else %}<label class="form-label small">{{ campo.label }}</label>{{ campo }}{% endif %}{% for e in campo.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}{% if campo.help_text %}<div class="form-text">{{ campo.help_text }}</div>{% endif %}</div>{% endfor %}{% for campo in f.form.hidden_fields %}{{ campo }}{% endfor %}</div>
+  {% if f.form.non_field_errors %}<div class="alert alert-danger mt-2 mb-0">{{ f.form.non_field_errors|join:" " }}</div>{% endif %}{% endif %}
+  {% for nombre, valor in f.ocultos %}<input type="hidden" name="{{ nombre }}" value="{{ valor }}">{% endfor %}
+  <div class="mt-2 d-flex gap-2">{% for nombre, valor, texto in f.botones %}<button class="btn {% if forloop.first %}btn-primary{% else %}btn-outline-secondary{% endif %}" name="{{ nombre }}" value="{{ valor }}">{{ texto }}</button>{% endfor %}</div>
+</form>
+{% endfor %}
+{% for t in tablas %}
+{% if t.titulo %}<h2 class="h6 mt-3">{{ t.titulo }}</h2>{% endif %}
+<div class="table-responsive"><table class="table table-sm table-hover align-middle"><thead><tr>{% for e in t.encabezados %}<th>{{ e }}</th>{% endfor %}</tr></thead><tbody>
+{% for fila in t.filas %}<tr>{% for c in fila %}<td{% if c.num %} class="num"{% endif %}>{% if c.url %}<a href="{{ c.url }}">{{ c.texto }}</a>{% elif c.form %}<form method="post" action="{{ c.form }}" class="d-inline">{% csrf_token %}{% for n, v in c.datos %}<input type="hidden" name="{{ n }}" value="{{ v }}">{% endfor %}<button class="btn btn-sm btn-outline-primary">{{ c.texto }}</button></form>{% elif c.texto is not None %}{{ c.texto }}{% else %}{{ c }}{% endif %}</td>{% endfor %}</tr>
+{% empty %}<tr><td colspan="{{ t.encabezados|length }}" class="text-secondary">{{ t.vacio|default:"Sin datos." }}</td></tr>{% endfor %}
+</tbody>{% if t.pie %}<tfoot><tr>{% for c in t.pie %}<th{% if c.num %} class="num"{% endif %}>{% if c.texto is not None %}{{ c.texto }}{% else %}{{ c }}{% endif %}</th>{% endfor %}</tr></tfoot>{% endif %}</table></div>
+{% endfor %}
+{% block extra %}{% endblock %}
+{% endblock %}

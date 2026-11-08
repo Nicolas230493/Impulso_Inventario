@@ -1,0 +1,24 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<div class="d-flex flex-wrap justify-content-between gap-2 mb-3"><h1 class="h4">Tablero de desposte</h1>
+<form class="d-flex gap-2"><input type="date" name="desde" class="form-control" value="{{ r.desde|date:'Y-m-d' }}"><input type="date" name="hasta" class="form-control" value="{{ r.hasta|date:'Y-m-d' }}"><button class="btn btn-outline-secondary">Ver</button></form></div>
+{% if r.total %}
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-2"><div class="card card-body"><div class="small text-secondary">Órdenes</div><div class="fs-4">{{ r.total.ordenes }}</div></div></div>
+  <div class="col-6 col-md-2"><div class="card card-body"><div class="small text-secondary">Kg ingresados</div><div class="fs-4">{{ r.total.entrada|num:3 }}</div></div></div>
+  <div class="col-6 col-md-2"><div class="card card-body"><div class="small text-secondary">Kg obtenidos</div><div class="fs-4">{{ r.total.aprovechable|num:3 }}</div></div></div>
+  <div class="col-6 col-md-2"><div class="card card-body"><div class="small text-secondary">Rendimiento</div><div class="fs-4">{{ r.total.rendimiento|num:2 }} %</div></div></div>
+  <div class="col-6 col-md-2"><div class="card card-body"><div class="small text-secondary">Merma</div><div class="fs-4">{{ r.total.merma|num:2 }} %</div></div></div>
+  <div class="col-6 col-md-2"><div class="card card-body"><div class="small text-secondary">Costo/kg origen</div><div class="fs-4">{{ r.total.costo_kg|pesos:2 }}</div><div class="small text-danger">Pérdida {{ r.total.perdida|pesos }}</div></div></div>
+</div>
+<div class="row g-3">
+  <div class="col-lg-6"><div class="card card-body"><h2 class="h6">Por corte</h2><table class="table table-sm small mb-0"><thead><tr><th>Corte</th><th class="num">Kg</th><th class="num">Rend. %</th><th class="num">Costo/kg</th></tr></thead><tbody>
+  {% for f in r.por_corte %}<tr><td>{{ f.producto }}</td><td class="num">{{ f.kg|num:3 }}</td><td class="num">{{ f.rendimiento|num:2 }}</td><td class="num">{{ f.costo_kg|pesos:2 }}</td></tr>{% endfor %}</tbody></table></div></div>
+  <div class="col-lg-6"><div class="card card-body"><h2 class="h6">Mermas por categoría</h2><table class="table table-sm small mb-0"><tbody>{% for m in r.mermas %}<tr><td>{{ m.categoria__nombre }}</td><td class="num">{{ m.kg|kg }}</td></tr>{% empty %}<tr><td class="text-secondary">Sin mermas.</td></tr>{% endfor %}</tbody></table></div></div>
+  {% include "desposte/_tabla_grupo.html" with titulo="Rendimiento por operario" filas=r.por_operario %}
+  {% include "desposte/_tabla_grupo.html" with titulo="Rendimiento por proveedor" filas=r.por_proveedor %}
+  {% include "desposte/_tabla_grupo.html" with titulo="Rendimiento por lote" filas=r.por_lote %}
+</div>
+{% else %}<p class="text-secondary">No hay órdenes aprobadas en el período.</p>{% endif %}
+<p class="mt-3"><a href="{% url 'desposte:reportes' %}">Ver reportes exportables</a></p>
+{% endblock %}

@@ -1,0 +1,133 @@
+IMPULSO INVENTARIO — RESUMEN DE LO HECHO
+Actualizado al 08/11/2026
+
+Sistema de inventario multiempresa para comercios de alimentos y retail en general (pollerías, carnicerías,
+supermercados, almacenes, ferreterías, indumentaria, electrónica, restaurantes, hoteles). Construido en Django 5,
+PostgreSQL, Celery/Redis, HTMX y Bootstrap, según «Impulso Inventario — Especificaciones por fases (copia 1).md».
+
+ESTADO GENERAL
+--------------
+- Implementado: Fases 0, 1, 2, 3, 4 y 5, y la Extensión A completa (bloques A1 a A11).
+- Pendiente: Fases 6 (gestión comercial / ventas), 7 (integraciones e IA) y 8 (comercialización SaaS).
+- Calidad: [[TESTS]] tests automáticos en verde, linter (ruff) sin errores, migraciones al día.
+  Cobertura total [[COB_TOTAL]] y de la capa de servicios [[COB_SERVICIOS]] (el mínimo pedido es 85 %).
+- Tamaño: 24 apps, 102 modelos, unas 149 rutas, ~18.800 líneas de Python (sin migraciones).
+- Todavía no hay ningún commit en git: todo el trabajo está sin versionar.
+
+
+CONVENCIONES QUE CUMPLE TODO EL SISTEMA
+---------------------------------------
+- Multiempresa: cada dato pertenece a una empresa. Sin empresa activa, las consultas fallan en vez de devolver todo.
+  Cada pantalla y la API tienen pruebas de aislamiento (ID adivinado de otra empresa = 404).
+- Kardex inmutable: el stock solo cambia por movimientos confirmados; las correcciones son contramovimientos.
+- Decimales fijos con redondeo «half up»; prorrateos que cuadran al centavo.
+- Lógica solo en services.py (vistas, API y tareas usan los mismos servicios).
+- Auditoría con motivo obligatorio e historial de cambios de los maestros.
+- Módulos activables por empresa y permisos por rol (dueño, administrador, encargado, supervisor de producción,
+  operario, vendedor, calidad, lectura).
+- Horario de Buenos Aires y formato argentino (1.234,56) en pantalla.
+
+
+FASE 0 — FUNDACIONES
+--------------------
+- Empresas, sucursales, configuración, módulos activables; usuarios con email y MFA (TOTP); roles y membresías.
+- Auditoría, numeradores correlativos con bloqueo, máquinas de estado, menú según módulo y permiso.
+- Exportación a CSV, Excel y PDF. Docker Compose (web, db, redis, worker, beat) y CI en GitHub Actions.
+
+FASE 1 — NÚCLEO DE INVENTARIO
+-----------------------------
+- Productos, categorías, marcas, unidades y conversiones, códigos de barras, importación CSV.
+- Depósitos por sucursal, stock materializado, costo promedio ponderado, reservas.
+- Entradas, salidas, transferencias, ajustes con autorización por umbral, reversión.
+- Kardex por producto/depósito/lote, conciliación nocturna stock vs. Kardex. API REST.
+
+FASE 2 — COMPRAS, RECEPCIÓN Y LOTES
+-----------------------------------
+- Proveedores y precios, órdenes de compra, recepciones con costos adicionales prorrateados (flete, etc.).
+- Lotes con FEFO, bloqueo y liberación, vencimientos automáticos (tarea diaria).
+- Devoluciones a proveedor, inventario físico con aprobación, reporte de diferencias.
+
+FASE 3 — DESPOSTE DE POLLO (motor de transformación)
+----------------------------------------------------
+- Motor genérico N entradas → N salidas, con plantillas versionadas de rendimientos.
+- Pantallas de operario (pesajes) y supervisor; el balance debe cerrar al gramo con diferencias clasificadas.
+- Merma normal absorbida y anormal a pérdida; reparto de costos por peso o por valor de venta.
+- Doble firma si un corte sale de tolerancia; reversión segura; tablero y reportes. Precarga de pollería.
+
+EXTENSIÓN A — MERCADERÍA GENERAL MULTIRUBRO
+-------------------------------------------
+- Perfil de control por producto (lote, vencimiento, variantes, serie, kit, retornable, por medida, consignación,
+  uso interno, bien en circulación), con combinaciones inválidas rechazadas.
+- A1: presentaciones (unidad, pack, bulto), dos costos (promedio y reposición), reglas de precio con markup, IVA y
+  redondeo, actualización masiva con vista previa y deshacer, listas de proveedores (importación en segundo plano),
+  cola de etiquetas, vencimientos sin lote, sugerencia de pedido en bultos, alta rápida por escaneo, búsqueda
+  instantánea, RECEPCIÓN POR ESCANEO DE BULTOS (contra orden o libre).
+- A2: variantes talle × color con SKU y código propios, curvas de talles; COMPRA, TRANSFERENCIA y CONTEO EN MATRIZ;
+  ventas por variante (qué se agota primero).
+- A3: números de serie e IMEI, garantía, envío y regreso de service.
+- A4: kits virtuales (combos) y armados (canastas) con trazabilidad de componentes.
+- A5: envases retornables con saldo por cliente y proveedor.
+- A6: venta por medida y a granel, rollos/piezas con retazos, etiquetas de balanza.
+- A7: consignación recibida y entregada, con liquidaciones.
+- A8: consumo interno por centro de costo, pedidos internos con aprobación, niveles par.
+- A9: bienes en circulación (blancos, vajilla, herramientas): lavandería, préstamos, bajas.
+- A10: atributos por categoría y productos equivalentes.
+- A11: clasificación ABC, conteo cíclico, indicadores (rotación, exactitud, inmovilizado, quiebres).
+- Precargas por rubro: almacén, distribuidora, ferretería, indumentaria, electrónica, restaurante, hotel,
+  pollería y supermercado.
+
+FASE 4 — PRODUCCIÓN GENERAL (estilo supermercado)
+-------------------------------------------------
+- Despiece en etapas con PIEZAS IDENTIFICADAS (media res, cuarto, res porcina, horma de queso): el cuarteo genera
+  cuartos que siguen identificados; rendimiento por pieza a través de todas sus etapas.
+- Elaboración con RECETAS versionadas (panadería, rotisería, carnicería, fiambrería): teórico × tandas, consumo real,
+  sustitutos permitidos, desvío con tolerancia, insumos por FEFO, lote elaborado con todos sus lotes de origen,
+  subproducto opcional.
+- COSTOS DE PROCESO: conceptos directos e indirectos, tarifas por orden, kg, hora o unidad, por sucursal y tipo;
+  empaques (bandejas, film) como insumos; cierre mensual tarifado vs. real.
+- RENTABILIDAD: margen bruto por producto contra precio sin IVA, con alerta bajo umbral.
+- Precarga «supermercado»: vacuno (cuarteo + despiece de cuartos), porcino, fraccionado de horma y recetas de pan,
+  milanesas, chorizo y queso rallado.
+- «Desposte» pasó a llamarse «Despiece» en la interfaz.
+
+FASE 5 — TRAZABILIDAD, CALIDAD Y CADENA DE FRÍO
+-----------------------------------------------
+- TRAZABILIDAD: grafo de lotes recorrido con consultas recursivas de PostgreSQL. Hacia atrás (proveedor,
+  recepción, remito, temperatura, órdenes), interna (entradas, salidas, mermas) y hacia adelante (derivados con
+  stock actual por sucursal y depósito y sus movimientos). Árbol navegable e informe PDF para la autoridad sanitaria.
+  510 derivados en 3 niveles responden en menos de 2 segundos.
+- RETIROS DE PRODUCTO: un botón bloquea el lote y todos sus derivados en todas las sucursales; lista dónde hay
+  stock y qué depósitos recibieron; registra descarte, devolución, liberación (solo Calidad, con motivo) y notas;
+  se cierra solo cuando no queda stock retenido.
+- CADENA DE FRÍO: perfiles de conservación precargados solo con referencias citadas (ANMAT / SENASA), a confirmar
+  por la empresa; cámaras con rango y frecuencia; registro rápido para tablet; fuera de rango = alerta + acción
+  correctiva obligatoria + bloqueo opcional de lotes; alerta de «cámara sin registro».
+- CALIDAD: plantillas de control con ítems críticos, inspecciones (con foto) que abren no conformidades solas,
+  no conformidades con acción correctiva y verificación de eficacia, limpieza POES verificada por otra persona,
+  documentos con vencimiento (alerta 30 días antes).
+- ALERTAS: en el tablero y por email; revisión automática cada hora (Celery Beat).
+- PERFIL DE NEGOCIO: actividades declaradas (venta, despiece de aves, despostadero, elaboración, fraccionamiento,
+  faena…). Ocultan lo que no corresponde y, con despiece de aves, exigen la temperatura del sector en cada orden.
+  El sistema nunca muestra a la empresa como habilitada o certificada.
+
+
+PENDIENTES CONOCIDOS (menores)
+------------------------------
+- Row Level Security de PostgreSQL como segunda capa de aislamiento (hoy: manager + middleware + pruebas).
+- Lectura directa de balanzas y sensores de temperatura (Fase 7); avisos por WhatsApp (Fase 7).
+- Trazabilidad hasta el cliente final y ventas con detalle (Fase 6).
+- Botón para cargar empaques como insumo en la pantalla de despiece (el servicio ya existe); edición de tarifas.
+- Preguntas abiertas del anexo B de la especificación (modo sin conexión, pilotos, ARCA, hosting).
+
+
+CÓMO LEVANTARLO
+---------------
+  cp .env.example .env
+  docker compose up -d
+  docker compose exec web python manage.py cargar_demo
+  Abrir http://localhost:8000 — usuarios dueno@, supervisor@, operario@ y calidad@demo.local,
+  contraseña demo-impulso-2026.
+
+Tests locales:
+  docker start impulso-inv-pg
+  .venv/bin/pytest

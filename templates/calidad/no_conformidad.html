@@ -1,0 +1,14 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<div class="d-flex justify-content-between mb-2"><h1 class="h4">No conformidad {{ nc.numero }}</h1><span class="badge fs-6 text-bg-{% if abierta %}warning{% else %}success{% endif %}">{{ nc.get_estado_display }}</span></div>
+<p class="small text-secondary">{{ nc.creado_en|date:"d/m/Y H:i" }} · {{ nc.get_origen_display }} · gravedad {{ nc.get_gravedad_display|lower }} · {{ nc.responsable }}{% if nc.inspeccion %} · inspección «{{ nc.inspeccion.plantilla.nombre }}»{% endif %}</p>
+<div class="card card-body mb-3" style="max-width:900px"><p class="mb-1">{{ nc.descripcion|linebreaksbr }}</p>
+{% if lotes %}<p class="small mb-0">Lotes: {% for l in lotes %}<a href="{% url 'trazabilidad:lote' l.pk %}">{{ l }}</a> ({{ l.producto.nombre }}){% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}</div>
+{% if nc.accion_correctiva %}<h2 class="h6">Acción correctiva</h2><p>{{ nc.accion_correctiva|linebreaksbr }}</p>{% endif %}
+{% if nc.verificacion %}<h2 class="h6">Verificación de eficacia</h2><p>{{ nc.verificacion|linebreaksbr }} <span class="small text-secondary">({{ nc.cerrada_por }}, {{ nc.cerrada_en|date:"d/m/Y" }})</span></p>{% endif %}
+{% if abierta %}
+{% if puede_operar %}<form method="post" class="mb-3" style="max-width:900px">{% csrf_token %}<input type="hidden" name="accion" value="tratar"><label class="form-label small">{% if nc.accion_correctiva %}Actualizar{% else %}Registrar{% endif %} acción correctiva</label><textarea name="texto" class="form-control mb-2" rows="2" required>{{ nc.accion_correctiva }}</textarea><button class="btn btn-primary">Guardar</button></form>{% endif %}
+{% if puede_cerrar and nc.accion_correctiva %}<form method="post" style="max-width:900px">{% csrf_token %}<input type="hidden" name="accion" value="cerrar"><label class="form-label small">Cómo se verificó la eficacia</label><textarea name="texto" class="form-control mb-2" rows="2" required></textarea><button class="btn btn-success">Cerrar no conformidad</button></form>{% endif %}
+{% endif %}
+<p class="mt-3"><a href="{% url 'calidad:no_conformidades' %}">Volver</a></p>
+{% endblock %}

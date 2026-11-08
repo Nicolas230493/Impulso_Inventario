@@ -1,0 +1,8 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<div class="d-flex justify-content-between mb-3"><h1 class="h4">Usuarios</h1><a class="btn btn-primary" href="{% url 'empresas:usuario_agregar' %}">Agregar</a></div>
+<table class="table table-sm align-middle"><thead><tr><th>Usuario</th><th>Email</th><th>Rol</th><th>MFA</th><th>Estado</th><th></th></tr></thead><tbody>
+{% for m in membresias %}<tr><td>{{ m.usuario.get_full_name }}</td><td>{{ m.usuario.email }}</td><td>{{ m.rol }}</td><td>{% if m.usuario.mfa_activo %}Sí{% else %}No{% endif %}</td>
+<td>{% if m.activa %}Activa{% else %}Inactiva{% endif %}</td><td class="text-end"><a href="{% url 'empresas:usuario_rol' m.pk %}">Cambiar rol</a>{% if m.activa %} · <a href="{% url 'empresas:usuario_desactivar' m.pk %}">Desactivar</a>{% endif %}</td></tr>{% endfor %}
+</tbody></table>
+{% endblock %}

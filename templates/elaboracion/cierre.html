@@ -1,0 +1,18 @@
+{% extends "base/base.html" %}{% load formato %}
+{% block contenido %}
+<h1 class="h4 mb-3">Cierre mensual de costos de proceso</h1>
+<form method="get" class="d-flex gap-2 mb-3" style="max-width:400px">{{ form.mes }}<button class="btn btn-outline-secondary">Ver</button></form>
+<p class="text-secondary small">Del {{ r.desde|date:"d/m/Y" }} al {{ r.hasta|date:"d/m/Y" }}. Compara lo que se cargó a las órdenes con tarifa contra lo que realmente se pagó. Las órdenes cerradas no se recalculan.</p>
+<form method="post">{% csrf_token %}
+<table class="table table-sm align-middle" style="max-width:900px"><thead><tr><th>Concepto indirecto</th><th class="num">Tarifado en órdenes</th><th class="num">Real del mes</th><th class="num">Diferencia</th><th class="num">%</th></tr></thead><tbody>
+{% for c, real in conceptos %}<tr><td>{{ c.nombre }}</td>
+<td class="num">{% for f in r.filas %}{% if f.concepto.pk == c.pk %}{{ f.tarifado|pesos }}{% endif %}{% endfor %}</td>
+<td class="num">{% if admin %}<input name="real_{{ c.pk }}" value="{{ real|stringformat:'s' }}" inputmode="decimal" class="form-control form-control-sm text-end ms-auto" style="width:9rem">{% else %}{{ real|pesos }}{% endif %}</td>
+<td class="num">{% for f in r.filas %}{% if f.concepto.pk == c.pk and f.diferencia is not None %}{{ f.diferencia|pesos }}{% endif %}{% endfor %}</td>
+<td class="num">{% for f in r.filas %}{% if f.concepto.pk == c.pk and f.pct is not None %}{{ f.pct|num:1 }} %{% endif %}{% endfor %}</td></tr>
+{% empty %}<tr><td colspan="5" class="text-secondary">No hay conceptos indirectos.</td></tr>{% endfor %}
+</tbody><tfoot><tr><th>Total</th><th class="num">{{ r.tarifado|pesos }}</th><th class="num">{{ r.real|pesos }}</th><th class="num">{{ r.diferencia|pesos }}</th><th></th></tr></tfoot></table>
+{% if admin %}<button class="btn btn-primary">Guardar reales del mes</button>{% endif %}
+</form>
+<p class="mt-3"><a href="{% url 'elaboracion:costos' %}">Costos de proceso</a></p>
+{% endblock %}

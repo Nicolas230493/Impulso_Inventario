@@ -1,0 +1,11 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<div class="d-flex flex-wrap justify-content-between gap-2 mb-3"><h1 class="h4">Trazabilidad</h1>
+<a class="btn btn-outline-primary btn-sm" href="{% url 'trazabilidad:retiros' %}">Retiros de producto</a></div>
+<form method="get" class="d-flex gap-2 mb-3" style="max-width:640px"><input name="q" value="{{ q }}" class="form-control form-control-lg" placeholder="Código de lote, lote del proveedor o producto" autofocus><button class="btn btn-primary">Buscar</button></form>
+<p class="text-secondary small">Hacia atrás: proveedor, recepción, remito y temperatura. Interna: procesos y mermas. Hacia adelante: derivados y dónde está hoy cada kilo.</p>
+{% if q %}<table class="table table-sm table-hover"><thead><tr><th>Lote</th><th>Producto</th><th>Proveedor</th><th>Recepción</th><th>Vence</th><th>Estado</th></tr></thead><tbody>
+{% for f in filas %}<tr>{% for c in f %}<td>{% if c.url %}<a href="{{ c.url }}">{{ c.texto }}</a>{% else %}{{ c }}{% endif %}</td>{% endfor %}</tr>{% empty %}<tr><td colspan="6" class="text-secondary">Sin lotes.</td></tr>{% endfor %}</tbody></table>{% endif %}
+<h2 class="h6 mt-4">Retiros abiertos</h2>
+<ul>{% for r in abiertos %}<li><a href="{% url 'trazabilidad:retiro' r.pk %}">{{ r.numero }}</a> · lote {{ r.lote }} ({{ r.lote.producto.nombre }}) · {{ r.get_nivel_display }} · {{ r.get_estado_display }}</li>{% empty %}<li class="text-secondary">No hay retiros abiertos.</li>{% endfor %}</ul>
+{% endblock %}

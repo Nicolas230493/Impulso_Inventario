@@ -1,0 +1,16 @@
+{% extends "base/base.html" %}{% load formato %}
+{% block contenido %}
+<h1 class="h4 mb-3">Buscar por atributos</h1>
+<form class="card card-body mb-3" style="max-width:900px"><div class="row g-2">
+<div class="col-md-4"><label class="form-label small">Categoría</label><select name="categoria" class="form-select" onchange="this.form.submit()"><option value="">Elegir…</option>{% for c in categorias %}<option value="{{ c.pk }}" {% if categoria and c.pk == categoria.pk %}selected{% endif %}>{{ c }}</option>{% endfor %}</select></div>
+{% for a in atributos %}{% if a.filtrable %}<div class="col-md-4"><label class="form-label small">{{ a.nombre }}{% if a.unidad %} ({{ a.unidad }}){% endif %}</label>
+{% if a.valores %}<select name="a{{ a.pk }}" class="form-select"><option value="">Todos</option>{% for v in a.valores %}<option {% for k, val in valores.items %}{% if k == a.pk and val == v %}selected{% endif %}{% endfor %}>{{ v }}</option>{% endfor %}</select>
+{% else %}<input name="a{{ a.pk }}" class="form-control" value="{% for k, val in valores.items %}{% if k == a.pk %}{{ val }}{% endif %}{% endfor %}">{% endif %}</div>{% endif %}{% endfor %}
+</div><div class="mt-2"><button class="btn btn-primary">Filtrar</button></div></form>
+{% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+{% if not total_atributos %}<p class="text-secondary">Todavía no hay atributos definidos en ninguna categoría.</p>{% endif %}
+{% if categoria %}<table class="table table-sm align-middle"><thead><tr><th>Código</th><th>Producto</th><th class="num">Precio</th><th>Equivalentes con stock</th></tr></thead><tbody>
+{% for p, eqs in resultados %}<tr><td>{{ p.codigo }}</td><td><a href="{% url 'productos:detalle' p.pk %}">{{ p.nombre }}</a></td><td class="num">{{ p.precio_venta|pesos }}</td>
+<td>{% for e in eqs %}<a href="{% url 'productos:detalle' e.producto.pk %}">{{ e.producto.nombre }}</a> ({{ e.stock|num:3 }}){% if not forloop.last %}, {% endif %}{% endfor %}</td></tr>
+{% empty %}<tr><td colspan="4" class="text-secondary">Sin productos con esos atributos.</td></tr>{% endfor %}</tbody></table>{% endif %}
+{% endblock %}

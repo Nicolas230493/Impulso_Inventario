@@ -1,0 +1,7 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<div class="d-flex justify-content-between mb-3"><h1 class="h4">Diferencias de peso por proveedor</h1><div class="d-flex gap-2"><a class="btn btn-sm btn-outline-secondary" href="?{{ request.GET.urlencode }}&exportar=xlsx">Excel</a><a class="btn btn-sm btn-outline-secondary" href="?{{ request.GET.urlencode }}&exportar=csv">CSV</a></div></div>
+<form class="row g-2 mb-3"><div class="col-auto"><input type="date" name="desde" class="form-control" value="{{ request.GET.desde }}"></div><div class="col-auto"><input type="date" name="hasta" class="form-control" value="{{ request.GET.hasta }}"></div><div class="col-auto"><button class="btn btn-outline-secondary">Filtrar</button></div></form>
+<table class="table table-sm"><thead><tr><th>Proveedor</th><th class="num">Declarado</th><th class="num">Recibido</th><th class="num">Diferencia</th><th class="num">%</th></tr></thead><tbody>
+{% for f in filas %}<tr><td>{{ f.proveedor }}</td><td class="num">{{ f.declarado|kg }}</td><td class="num">{{ f.recibido|kg }}</td><td class="num">{{ f.diferencia|kg }}</td><td class="num">{{ f.porcentaje|pct }}</td></tr>{% empty %}<tr><td colspan="5" class="text-secondary">Sin datos.</td></tr>{% endfor %}</tbody></table>
+{% endblock %}

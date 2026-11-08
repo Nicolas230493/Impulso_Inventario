@@ -1,0 +1,12 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<div class="d-flex flex-wrap justify-content-between mb-3"><h1 class="h4">Stock por depósito</h1>
+<div class="d-flex gap-2"><a class="btn btn-outline-secondary" href="?{{ request.GET.urlencode }}&exportar=xlsx">Excel</a><a class="btn btn-outline-secondary" href="?{{ request.GET.urlencode }}&exportar=csv">CSV</a></div></div>
+<form class="row g-2 mb-3"><div class="col-md-4"><select name="deposito" class="form-select"><option value="">Todos los depósitos</option>{% for d in depositos %}<option value="{{ d.pk }}" {% if request.GET.deposito == d.pk|stringformat:"s" %}selected{% endif %}>{{ d }}</option>{% endfor %}</select></div>
+<div class="col-md-4"><input name="q" class="form-control" placeholder="Producto" value="{{ request.GET.q }}"></div><div class="col-auto"><button class="btn btn-outline-secondary">Filtrar</button></div></form>
+<table class="table table-sm table-hover"><thead><tr><th>Depósito</th><th>Producto</th><th>Lote</th><th>Vence</th><th class="num">Cantidad</th><th class="num">Reservada</th><th class="num">Disponible</th><th class="num">Costo</th><th class="num">Valor</th></tr></thead><tbody>
+{% for s in stocks %}<tr><td>{{ s.deposito.nombre }}</td><td><a href="{% url 'productos:detalle' s.producto_id %}">{{ s.producto.nombre }}</a></td><td>{% if s.lote %}<a href="{% url 'lotes:detalle' s.lote_id %}">{{ s.lote }}</a> {% if s.lote.estado != 'disponible' %}<span class="badge text-bg-warning">{{ s.lote.get_estado_display }}</span>{% endif %}{% endif %}</td><td>{{ s.lote.fecha_vencimiento|date:"d/m/Y" }}</td>
+<td class="num">{{ s.cantidad|num:3 }} {{ s.producto.unidad_base }}</td><td class="num">{{ s.cantidad_reservada|num:3 }}</td><td class="num">{{ s.disponible|num:3 }}</td><td class="num">{{ s.costo_promedio|pesos:4 }}</td><td class="num">{{ s.valor|pesos }}</td></tr>
+{% empty %}<tr><td colspan="9" class="text-secondary">Sin stock.</td></tr>{% endfor %}
+</tbody><tfoot><tr><th colspan="8">Total valorizado</th><th class="num">{{ total|pesos }}</th></tr></tfoot></table>
+{% endblock %}

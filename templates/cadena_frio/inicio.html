@@ -1,0 +1,16 @@
+{% extends "base/base.html" %}{% load formato %}
+{% block body_class %}tablet{% endblock %}
+{% block contenido %}
+<div class="d-flex flex-wrap justify-content-between gap-2 mb-3"><h1 class="h4">Cadena de frío</h1>
+<div class="d-flex gap-2"><a class="btn btn-outline-secondary btn-sm" href="{% url 'cadena_frio:registros' %}">Registros</a>{% if pendientes %}<a class="btn btn-danger btn-sm" href="{% url 'cadena_frio:registros' %}?pendientes=1">{{ pendientes }} sin acción correctiva</a>{% endif %}{% if admin %}<a class="btn btn-outline-secondary btn-sm" href="{% url 'cadena_frio:camaras' %}">Cámaras</a><a class="btn btn-outline-secondary btn-sm" href="{% url 'cadena_frio:perfiles' %}">Perfiles</a>{% endif %}</div></div>
+<div class="row g-3">
+{% for f in camaras %}<div class="col-md-6 col-lg-4"><div class="card card-body {% if f.fuera %}border-danger{% elif f.atrasada %}border-warning{% endif %}">
+<div class="d-flex justify-content-between"><strong>{{ f.camara.identificador }}</strong><span class="small text-secondary">{{ f.camara.deposito.nombre }}</span></div>
+<div class="small text-secondary">Rango {% if f.rango.0 is not None %}{{ f.rango.0 }}{% else %}—{% endif %} a {% if f.rango.1 is not None %}{{ f.rango.1 }}{% else %}—{% endif %} °C · cada {{ f.camara.frecuencia_horas }} h</div>
+<div class="fs-4 my-1 {% if f.fuera %}text-danger{% endif %}">{% if f.ultimo %}{{ f.ultimo.valor|num:1 }} °C <span class="fs-6 text-secondary">{{ f.ultimo.fecha_hora|date:"d/m H:i" }}</span>{% else %}<span class="fs-6 text-secondary">sin registros</span>{% endif %}</div>
+{% if f.atrasada %}<div class="badge text-bg-warning mb-1">Sin registro en su frecuencia</div>{% endif %}{% if f.pendiente_accion %}<div class="badge text-bg-danger mb-1">Falta acción correctiva</div>{% endif %}
+{% if puede_registrar %}<form method="post" class="d-flex gap-2">{% csrf_token %}<input type="hidden" name="camara" value="{{ f.camara.pk }}"><input name="valor" inputmode="decimal" class="form-control" placeholder="°C" required><button class="btn btn-primary">Registrar</button></form>{% endif %}
+</div></div>
+{% empty %}<p class="text-secondary">No hay cámaras configuradas.{% if admin %} <a href="{% url 'cadena_frio:camaras' %}">Agregar una</a>.{% endif %}</p>{% endfor %}
+</div>
+{% endblock %}

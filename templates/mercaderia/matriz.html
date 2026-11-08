@@ -1,0 +1,35 @@
+{% extends "base/base.html" %}{% load formato %}
+{% block contenido %}
+<div class="d-flex flex-wrap justify-content-between gap-2 mb-3"><h1 class="h4">{{ titulo }}</h1>
+<a class="btn btn-outline-secondary btn-sm" href="{% url 'mercaderia:variantes' padre.pk %}">Volver a variantes</a></div>
+{% if nota %}<p class="text-secondary small">{{ nota }}</p>{% endif %}
+<form method="post" class="card card-body" style="max-width:1100px">{% csrf_token %}
+  <div class="row g-2 mb-3">{% for campo in form.visible_fields %}<div class="col-md-3"><label class="form-label small">{{ campo.label }}</label>{{ campo }}{% for e in campo.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}{% if campo.help_text %}<div class="form-text">{{ campo.help_text }}</div>{% endif %}</div>{% endfor %}</div>
+  {% if form.non_field_errors %}<div class="alert alert-danger py-2">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+  <div class="table-responsive"><table class="table table-sm table-bordered w-auto align-middle matriz"><thead><tr><th>{{ matriz.eje_filas|default:"" }}{% if matriz.eje_columnas %} \ {{ matriz.eje_columnas }}{% endif %}</th>{% for c in matriz.columnas %}<th class="text-center">{{ c|default:"Cantidad" }}</th>{% endfor %}<th class="num">Total</th></tr></thead><tbody>
+  {% for f, celdas in matriz.editable %}<tr><th>{{ f }}</th>{% for c in celdas %}<td>{% if c.variante %}<input name="v{{ c.variante.pk }}" value="{{ c.valor }}" inputmode="decimal" class="form-control form-control-sm text-end celda" style="width:5.5rem" data-fila="{{ forloop.parentloop.counter0 }}" data-col="{{ forloop.counter0 }}"><div class="small text-secondary text-end">{{ c.stock|num:0 }}</div>{% else %}<span class="text-secondary">—</span>{% endif %}</td>{% endfor %}<th class="num tot-fila" data-fila="{{ forloop.counter0 }}">0</th></tr>{% endfor %}
+  </tbody><tfoot><tr><th>Total</th>{% for c in matriz.columnas %}<th class="num tot-col" data-col="{{ forloop.counter0 }}">0</th>{% endfor %}<th class="num" id="tot-general">0</th></tr></tfoot></table></div>
+  {% if curvas %}<div class="row g-2 mt-1"><div class="col-md-3"><label class="form-label small">Sumar curva</label><select name="curva" class="form-select"><option value="">—</option>{% for cv in curvas %}<option value="{{ cv.pk }}">{{ cv.nombre }} ({{ cv.eje.nombre }})</option>{% endfor %}</select></div>
+  <div class="col-md-2"><label class="form-label small">Cantidad de curvas</label><input name="curvas" type="number" min="1" value="1" class="form-control"></div>
+  <div class="col-md-2"><label class="form-label small">Fijar eje</label><input name="curva_fijo_eje" class="form-control" placeholder="color"></div>
+  <div class="col-md-2"><label class="form-label small">Valor</label><input name="curva_fijo_valor" class="form-control" placeholder="Negro"></div></div>{% endif %}
+  <div class="mt-3"><button class="btn btn-primary">{{ boton }}</button></div>
+</form>
+{% endblock %}
+{% block scripts %}<script>
+(function () {
+  const n = (s) => parseFloat((s || "0").replace(",", ".")) || 0;
+  function sumar() {
+    const filas = {}, cols = {}; let total = 0;
+    document.querySelectorAll(".celda").forEach((i) => {
+      const v = n(i.value); filas[i.dataset.fila] = (filas[i.dataset.fila] || 0) + v;
+      cols[i.dataset.col] = (cols[i.dataset.col] || 0) + v; total += v;
+    });
+    document.querySelectorAll(".tot-fila").forEach((t) => (t.textContent = filas[t.dataset.fila] || 0));
+    document.querySelectorAll(".tot-col").forEach((t) => (t.textContent = cols[t.dataset.col] || 0));
+    document.getElementById("tot-general").textContent = total;
+  }
+  document.addEventListener("input", (e) => { if (e.target.classList.contains("celda")) sumar(); });
+  sumar();
+})();
+</script>{% endblock %}

@@ -1,0 +1,1 @@
+<ul class="list-unstyled small mb-0">{% for s in stocks %}<li>{{ s.lote }} · vence {{ s.lote.fecha_vencimiento|date:"d/m/Y"|default:"—" }} · libre {{ s.libre|num:3 }}</li>{% empty %}<li class="text-danger">Sin lotes disponibles.</li>{% endfor %}</ul>

@@ -1,0 +1,12 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<h1 class="h4 mb-3">{{ titulo }}</h1>
+<form method="post" enctype="multipart/form-data" class="card card-body" style="max-width: 760px">
+  {% csrf_token %}
+  {% include "nucleo/_campos.html" %}
+  <div class="d-flex gap-2 mt-2">
+    <button class="btn btn-primary">Guardar</button>
+    {% if volver %}<a class="btn btn-outline-secondary" href="{% url volver %}">Volver</a>{% endif %}
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base/base.html" %}
+{% block contenido_simple %}
+<div class="mx-auto" style="max-width: 560px">
+  <h1 class="h4 mb-4">Elegí empresa y sucursal</h1>
+  {% for membresia, sucursales in opciones %}
+  <form method="post" class="card card-body mb-3">{% csrf_token %}
+    <input type="hidden" name="empresa" value="{{ membresia.empresa_id }}">
+    <div class="fw-semibold">{{ membresia.empresa }}</div>
+    <div class="small text-secondary mb-2">{{ membresia.rol }}</div>
+    {% if sucursales %}
+    <select name="sucursal" class="form-select mb-2">
+      {% for s in sucursales %}<option value="{{ s.pk }}">{{ s }}</option>{% endfor %}
+    </select>
+    {% endif %}
+    <button class="btn btn-primary">Entrar</button>
+  </form>
+  {% empty %}
+  <div class="alert alert-warning">Tu usuario no pertenece a ninguna empresa activa.</div>
+  {% endfor %}
+  <div class="d-flex justify-content-between">
+    <a href="{% url 'usuarios:activar_mfa' %}" class="small">Activar verificación en dos pasos</a>
+    <form method="post" action="{% url 'usuarios:logout' %}">{% csrf_token %}<button class="btn btn-link btn-sm">Salir</button></form>
+  </div>
+</div>
+{% endblock %}

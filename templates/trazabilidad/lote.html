@@ -1,0 +1,29 @@
+{% extends "base/base.html" %}{% load formato %}
+{% block contenido %}
+<div class="d-flex flex-wrap justify-content-between gap-2 mb-2"><h1 class="h4">Lote {{ lote }} · {{ lote.producto.nombre }}</h1>
+<div class="d-flex gap-2"><a class="btn btn-outline-secondary btn-sm" href="{% url 'trazabilidad:lote_pdf' lote.pk %}">Informe PDF</a>
+{% if retiro %}<a class="btn btn-danger btn-sm" href="{% url 'trazabilidad:retiro' retiro.pk %}">En retiro {{ retiro.numero }}</a>{% elif puede_retirar %}<a class="btn btn-outline-danger btn-sm" href="{% url 'trazabilidad:retiro_nuevo' lote.pk %}">Iniciar retiro</a>{% endif %}</div></div>
+<p class="small text-secondary">Estado {{ lote.get_estado_display }}{% if lote.motivo_bloqueo %} ({{ lote.motivo_bloqueo }}){% endif %} · recibido {{ lote.fecha_recepcion|date:"d/m/Y" }}{% if lote.fecha_vencimiento %} · vence {{ lote.fecha_vencimiento|date:"d/m/Y" }}{% endif %}{% if c.atras.piezas %} · pieza de origen {% for p in c.atras.piezas %}{{ p }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}</p>
+<p class="small">Stock actual: {% for s in stock %}{{ s.deposito.sucursal.nombre }} / {{ s.deposito.nombre }}: <strong>{{ s.cantidad|num:3 }}</strong>{% if not forloop.last %} · {% endif %}{% empty %}sin stock{% endfor %}</p>
+
+<h2 class="h6 mt-3">Hacia atrás</h2>
+<div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>Lote</th><th>Producto</th><th>Proveedor</th><th>Recepción</th><th>Remito</th><th>Temp.</th><th>Orden / proceso</th></tr></thead><tbody>
+{% for nivel, n in atras %}<tr><td style="padding-left:{{ nivel|add:1 }}rem">{% if nivel %}↳ {% endif %}<a href="{% url 'trazabilidad:lote' n.lote.pk %}">{{ n.lote }}</a></td><td>{{ n.lote.producto.nombre }}</td><td>{{ n.proveedor|default:"" }}</td><td>{% if n.recepcion %}<a href="{% url 'compras:recepcion' n.recepcion.pk %}">{{ n.recepcion.numero }}</a> {{ n.fecha_recepcion|date:"d/m/Y H:i" }}{% endif %}</td><td>{{ n.remito }}</td><td>{% if n.temperatura is not None %}{{ n.temperatura|num:1 }} °C{% endif %}</td><td>{% if n.orden %}{{ n.orden.numero }} · {{ n.proceso }}{% endif %}</td></tr>{% endfor %}
+</tbody></table></div>
+
+<h2 class="h6 mt-3">Interna</h2>
+{% with f=c.interna.formacion %}{% if f %}<p class="small mb-1">Formado en la orden <strong>{{ f.orden.numero }}</strong> ({{ f.orden.get_tipo_display }}, {{ f.orden.fin|date:"d/m/Y H:i" }}).</p>
+<table class="table table-sm w-auto small"><tbody>
+{% for e in f.entradas %}<tr><td>Entrada{% if e.es_insumo %} (insumo){% endif %}</td><td>{{ e.producto.nombre }}</td><td>{{ e.lote|default:"" }}</td><td class="num">{{ e.peso_neto|num:3 }}</td><td></td></tr>{% endfor %}
+{% for s in f.salidas %}<tr><td>{{ s.get_tipo_resultado_display }}</td><td>{{ s.producto.nombre }}</td><td>{{ s.lote_generado|default:"" }}</td><td class="num">{{ s.peso_neto|num:3 }}</td><td>{{ s.deposito_destino.nombre }}</td></tr>{% endfor %}
+{% for d in f.mermas %}<tr><td>Merma</td><td>{{ d.categoria.nombre }}</td><td></td><td class="num">{{ d.peso|num:3 }}</td><td></td></tr>{% endfor %}
+</tbody></table>{% else %}<p class="small text-secondary">Lote de compra (no proviene de un proceso).</p>{% endif %}{% endwith %}
+{% for u in c.interna.usos %}<p class="small mb-0">Usado en <strong>{{ u.orden.numero }}</strong> ({{ u.cantidad|num:3 }}): {% for s in u.salidas %}{{ s.producto.nombre }} {{ s.lote_generado|default:"" }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endfor %}
+
+<h2 class="h6 mt-3">Hacia adelante · {{ c.adelante.niveles|length }} lotes derivados</h2>
+<div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>Lote</th><th>Producto</th><th>Estado</th><th>Dónde está hoy</th></tr></thead><tbody>
+{% for nivel, n in adelante %}<tr><td style="padding-left:{{ nivel|add:1 }}rem">{% if nivel %}↳ {% endif %}<a href="{% url 'trazabilidad:lote' n.lote.pk %}">{{ n.lote }}</a>{% if n.repetido %} <span class="text-secondary small">(ya listado)</span>{% endif %}</td><td>{{ n.lote.producto.nombre }}</td><td>{{ n.lote.get_estado_display }}</td><td>{% for s in n.stock %}{{ s.sucursal }} / {{ s.deposito }}: {{ s.cantidad|num:3 }}{% if not forloop.last %} · {% endif %}{% empty %}<span class="text-secondary">sin stock</span>{% endfor %}</td></tr>{% endfor %}
+</tbody></table></div>
+<h2 class="h6 mt-3">Movimientos registrados</h2>
+<div class="table-responsive"><table class="table table-sm small"><thead><tr>{% for e in c.tablas.3.1 %}<th>{{ e }}</th>{% endfor %}</tr></thead><tbody>{% for fila in c.tablas.3.2 %}<tr>{% for v in fila %}<td>{{ v }}</td>{% endfor %}</tr>{% empty %}<tr><td class="text-secondary">Sin movimientos.</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

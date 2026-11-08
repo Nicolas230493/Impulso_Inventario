@@ -1,0 +1,14 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<h1 class="h4 mb-1">{{ p.nombre }} v{{ p.version }} {% if p.activa %}<span class="badge text-bg-success">vigente</span>{% else %}<span class="badge text-bg-secondary">histórica</span>{% endif %}</h1>
+<p class="small text-secondary">Entrada: {{ p.producto_entrada.nombre }} · vigente desde {{ p.vigente_desde|date:"d/m/Y" }} · merma estándar {{ p.merma_estandar_pct|num:2 }} %.
+Versiones: {% for v in versiones %}<a href="{% url 'desposte:plantilla' v.pk %}">v{{ v.version }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+<form method="post">{% csrf_token %}
+<table class="table table-sm align-middle"><thead><tr><th>Resultado</th><th>Tipo</th><th>Rend. estándar %</th><th>Tolerancia ±</th><th>Precio ref. $/kg</th><th>Criterio de costo</th><th>Recupero $/kg</th><th>Lote</th>{% if p.activa %}<th>Quitar</th>{% endif %}</tr></thead><tbody>
+{% for linea, f in filas %}<tr><td>{{ linea.producto.nombre|default:"Merma normal" }}</td><td class="small">{{ linea.get_tipo_resultado_display }}</td>
+{% if p.activa %}<td>{{ f.rendimiento_estandar }}</td><td>{{ f.tolerancia }}</td><td>{{ f.precio_referencia }}</td><td>{{ f.criterio_costo }}</td><td>{{ f.valor_recupero }}</td><td>{{ f.genera_lote }}</td><td>{{ f.eliminar }}</td>
+{% else %}<td>{{ linea.rendimiento_estandar|num:2 }}</td><td>{{ linea.tolerancia|num:2 }}</td><td>{{ linea.precio_referencia|pesos }}</td><td>{{ linea.get_criterio_costo_display }}</td><td>{{ linea.valor_recupero|pesos:4 }}</td><td>{{ linea.genera_lote|yesno:"Sí,No" }}</td>{% endif %}</tr>{% endfor %}
+</tbody></table>
+{% if p.activa %}<p class="small text-secondary">Guardar crea una versión nueva. Las órdenes ya creadas conservan la versión con que se hicieron.</p><button class="btn btn-primary">Guardar como nueva versión</button>{% endif %}
+</form>
+{% endblock %}

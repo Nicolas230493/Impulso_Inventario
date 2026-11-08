@@ -1,0 +1,14 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<h1 class="h4 mb-3">Lotes</h1>
+<form class="row g-2 mb-3"><div class="col-md-3"><input name="q" class="form-control" placeholder="Código o producto" value="{{ request.GET.q }}"></div>
+<div class="col-md-3"><select name="estado" class="form-select"><option value="activos">Activos</option><option value="" {% if request.GET.estado == "" %}selected{% endif %}>Todos</option>{% for v, n in estados %}<option value="{{ v }}" {% if request.GET.estado == v %}selected{% endif %}>{{ n }}</option>{% endfor %}</select></div>
+<div class="col-md-3"><select name="vence_en" class="form-select"><option value="">Cualquier vencimiento</option><option value="0" {% if request.GET.vence_en == "0" %}selected{% endif %}>Vencidos o vencen hoy</option><option value="3" {% if request.GET.vence_en == "3" %}selected{% endif %}>Vencen en 3 días</option><option value="7" {% if request.GET.vence_en == "7" %}selected{% endif %}>Vencen en 7 días</option></select></div>
+<div class="col-auto"><button class="btn btn-outline-secondary">Filtrar</button></div></form>
+<table class="table table-sm table-hover"><thead><tr><th>Lote</th><th>Producto</th><th>Proveedor</th><th>Recepción</th><th>Vencimiento</th><th class="num">Inicial</th><th class="num">Costo origen</th><th>Estado</th></tr></thead><tbody>
+{% for l in pagina %}<tr><td><a href="{% url 'lotes:detalle' l.pk %}">{{ l.codigo }}</a></td><td>{{ l.producto.nombre }}</td><td>{{ l.proveedor|default:"" }}</td><td>{{ l.fecha_recepcion|date:"d/m/Y" }}</td>
+<td class="{% if l.fecha_vencimiento and l.fecha_vencimiento <= hoy %}text-danger fw-semibold{% endif %}">{{ l.fecha_vencimiento|date:"d/m/Y" }}</td><td class="num">{{ l.cantidad_inicial|num:3 }}</td><td class="num">{{ l.costo_unitario_origen|pesos:4 }}</td>
+<td><span class="badge {% if l.estado == 'disponible' %}text-bg-success{% elif l.estado == 'bloqueado' %}text-bg-warning{% elif l.estado == 'vencido' %}text-bg-danger{% else %}text-bg-secondary{% endif %}">{{ l.get_estado_display }}</span></td></tr>
+{% empty %}<tr><td colspan="8" class="text-secondary">Sin lotes.</td></tr>{% endfor %}</tbody></table>
+{% include "nucleo/_paginacion.html" %}
+{% endblock %}

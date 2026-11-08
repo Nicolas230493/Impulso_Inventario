@@ -1,0 +1,27 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<div class="d-flex flex-wrap justify-content-between gap-2 mb-3">
+<h1 class="h4">{{ mov.tipo }} {{ mov.numero|default:"(borrador)" }} {% include "inventario/_estado.html" with estado=mov.estado texto=mov.get_estado_display %}</h1>
+<div class="d-flex gap-2">
+{% if mov.estado == 'borrador' %}<form method="post" action="{% url 'inventario:confirmar' mov.pk %}">{% csrf_token %}<button class="btn btn-primary">Confirmar</button></form>{% endif %}
+{% if mov.estado == 'pendiente_autorizacion' and membresia.rol %}<form method="post" action="{% url 'inventario:autorizar' mov.pk %}">{% csrf_token %}<button class="btn btn-success">Autorizar</button></form>{% endif %}
+</div></div>
+<div class="card card-body mb-3 small"><div class="row">
+<div class="col-md-3"><strong>Fecha:</strong> {{ mov.fecha|date:"d/m/Y H:i" }}</div><div class="col-md-3"><strong>Usuario:</strong> {{ mov.usuario }}</div>
+<div class="col-md-3"><strong>Autorizó:</strong> {{ mov.autorizado_por|default:"—" }}</div><div class="col-md-3"><strong>Sucursal:</strong> {{ mov.sucursal }}</div>
+<div class="col-12 mt-2"><strong>Motivo:</strong> {{ mov.motivo|default:"—" }}</div>
+{% if mov.revierte_a %}<div class="col-12 mt-2">Revierte a <a href="{% url 'inventario:movimiento' mov.revierte_a_id %}">{{ mov.revierte_a.numero }}</a></div>{% endif %}
+{% if mov.reversion %}<div class="col-12 mt-2">Revertido por <a href="{% url 'inventario:movimiento' mov.reversion.pk %}">{{ mov.reversion.numero }}</a></div>{% endif %}
+</div></div>
+<table class="table table-sm"><thead><tr><th>Producto</th><th>Depósito</th><th>Lote</th><th class="num">Cantidad</th><th class="num">Costo unitario</th><th class="num">Costo total</th></tr></thead><tbody>
+{% for l in lineas %}<tr><td>{{ l.producto.nombre }}</td><td>{{ l.deposito }}</td><td>{{ l.lote|default:"" }}</td><td class="num">{{ l.cantidad|num:3 }} {{ l.producto.unidad_base }}</td><td class="num">{{ l.costo_unitario|pesos:4 }}</td><td class="num">{{ l.costo_total|pesos }}</td></tr>{% endfor %}
+</tbody></table>
+{% if mov.estado == 'confirmado' and mov.tipo.codigo != 'reversion' %}
+<details class="mt-3"><summary class="btn btn-outline-danger btn-sm">Revertir movimiento</summary>
+<form method="post" action="{% url 'inventario:revertir' mov.pk %}" class="card card-body mt-2" style="max-width:520px">{% csrf_token %}{% include "nucleo/_campos.html" with form=form_motivo %}<button class="btn btn-danger">Generar contramovimiento</button></form></details>
+{% endif %}
+{% if mov.estado == 'pendiente_autorizacion' %}
+<details class="mt-3"><summary class="btn btn-outline-danger btn-sm">Rechazar</summary>
+<form method="post" action="{% url 'inventario:rechazar' mov.pk %}" class="card card-body mt-2" style="max-width:520px">{% csrf_token %}{% include "nucleo/_campos.html" with form=form_motivo %}<button class="btn btn-danger">Rechazar ajuste</button></form></details>
+{% endif %}
+{% endblock %}

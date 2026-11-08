@@ -1,0 +1,8 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<h1 class="h4 mb-3">Búsqueda de productos</h1>
+<input type="search" name="q" value="{{ q }}" class="form-control mb-3" style="max-width:600px" autofocus autocomplete="off"
+  placeholder="Nombre, código, SKU o código de barras"
+  hx-get="{% url 'mercaderia:buscar' %}" hx-trigger="input changed delay:250ms, search" hx-target="#resultados" hx-push-url="true">
+<div id="resultados">{% include "mercaderia/_resultados.html" %}</div>
+{% endblock %}

@@ -1,0 +1,13 @@
+<div class="row g-3 mb-3">
+  <div class="col-md-4"><div class="card card-body"><div class="small text-secondary">Valor del inventario</div><div class="fs-4 fw-semibold">{{ r.valor|pesos }}</div></div></div>
+  <div class="col-md-4"><div class="card card-body"><div class="small text-secondary">Productos sin stock</div><div class="fs-4 fw-semibold">{{ r.sin_stock|length }}</div></div></div>
+  <div class="col-md-4"><div class="card card-body"><div class="small text-secondary">Stock crítico (bajo mínimo)</div><div class="fs-4 fw-semibold {% if r.criticos %}text-danger{% endif %}">{{ r.criticos|length }}</div></div></div>
+</div>
+<div class="row g-3">
+  <div class="col-lg-6"><div class="card card-body"><h2 class="h6">Stock crítico</h2><table class="table table-sm small mb-0"><tbody>
+  {% for p, total in r.criticos %}<tr><td>{{ p.nombre }}</td><td class="num text-danger">{{ total|num:3 }}</td><td class="num text-secondary">mín. {{ p.stock_minimo|num:3 }}</td></tr>{% empty %}<tr><td class="text-secondary">Nada bajo el mínimo.</td></tr>{% endfor %}
+  </tbody></table></div></div>
+  <div class="col-lg-6"><div class="card card-body"><h2 class="h6">Últimos movimientos</h2><table class="table table-sm small mb-0"><tbody>
+  {% for m in r.ultimos %}<tr><td>{{ m.confirmado_en|date:"d/m H:i" }}</td><td><a href="{% url 'inventario:movimiento' m.pk %}">{{ m.numero }}</a></td><td>{{ m.tipo }}</td><td>{{ m.usuario }}</td></tr>{% empty %}<tr><td class="text-secondary">Sin movimientos.</td></tr>{% endfor %}
+  </tbody></table></div></div>
+</div>

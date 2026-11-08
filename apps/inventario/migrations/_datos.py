@@ -1,0 +1,23 @@
+# codigo, nombre, signo, afecta_costo, requiere_motivo, requiere_autorizacion, admite_bloqueado, admite_vencido, manual
+TIPOS = [
+    ("entrada_manual", "Entrada manual", "+", True, False, False, False, False, True),
+    ("salida_manual", "Salida manual", "-", False, False, False, False, False, True),
+    ("transferencia", "Transferencia", "±", False, False, False, False, False, True),
+    ("consumo_interno", "Consumo interno", "-", False, True, False, False, False, True),
+    ("merma", "Merma simple", "-", False, True, True, True, False, True),
+    ("ajuste_positivo", "Ajuste positivo", "+", True, True, True, True, True, True),
+    ("ajuste_negativo", "Ajuste negativo", "-", False, True, True, True, False, True),
+    ("devolucion_cliente", "Devolución de cliente", "+", True, True, False, False, False, True),
+    ("descarte_vencimiento", "Descarte por vencimiento", "-", False, True, False, True, True, True),
+    ("reversion", "Reversión", "±", True, True, False, True, True, False),
+    ("recepcion", "Recepción de compra", "+", True, False, False, False, False, False),
+    ("devolucion_proveedor", "Devolución a proveedor", "-", False, True, False, True, False, False),
+    ("inventario_fisico", "Ajuste por inventario físico", "±", False, True, False, True, True, False),
+    ("transformacion", "Transformación", "±", True, False, False, False, False, False),
+    ("venta", "Salida por venta", "-", False, False, False, False, False, True),
+    ("consignacion_recibida", "Ingreso en consignación", "+", True, False, False, False, False, False),
+    ("devolucion_consignacion", "Devolución de consignación", "-", False, True, False, True, False, False),
+    ("envases_vacios", "Movimiento de envases vacíos", "±", True, False, False, False, False, False),
+    ("faltante_consignacion", "Faltante de consignación", "-", False, True, False, True, True, False),
+    ("descarte_retiro", "Descarte por retiro de producto", "-", False, True, False, True, True, False),
+]

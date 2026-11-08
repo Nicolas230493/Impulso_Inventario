@@ -1,0 +1,8 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<div class="d-flex justify-content-between mb-3"><h1 class="h4">Roles</h1><a class="btn btn-primary" href="{% url 'empresas:rol_nuevo' %}">Nuevo rol</a></div>
+<table class="table table-sm"><thead><tr><th>Rol</th><th>Tipo</th><th>Permisos</th><th></th></tr></thead><tbody>
+{% for r in roles %}<tr><td>{{ r.nombre }}</td><td>{% if r.es_sistema %}Sistema{% else %}Propio{% endif %}</td><td class="small">{{ r.permisos|join:", " }}</td>
+<td>{% if not r.es_sistema %}<a href="{% url 'empresas:rol_editar' r.pk %}">Editar</a>{% endif %}</td></tr>{% endfor %}
+</tbody></table>
+{% endblock %}

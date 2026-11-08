@@ -1,0 +1,16 @@
+{% extends "base/base.html" %}
+{% block body_class %}tablet{% endblock %}
+{% block contenido %}
+<div class="d-flex justify-content-between align-items-center mb-3"><h1 class="h3">Desposte</h1><a class="btn btn-primary btn-xl" href="{% url 'desposte:nueva' %}"><i class="bi bi-plus-lg"></i> Nueva orden</a></div>
+<h2 class="h6 text-secondary">En curso</h2>
+<div class="row g-3 mb-4">
+{% for o in abiertas %}<div class="col-md-6 col-xl-4"><a class="card card-body text-decoration-none h-100" href="{% url 'desposte:orden' o.pk %}">
+<div class="d-flex justify-content-between"><strong>{{ o.numero }}</strong>{% include "desposte/_estado.html" with o=o %}</div>
+<div class="small text-secondary">{{ o.plantilla }} · {{ o.operario }} · {{ o.creado_en|date:"d/m H:i" }}</div></a></div>
+{% empty %}<div class="col-12 text-secondary">No hay órdenes en curso.</div>{% endfor %}
+</div>
+<h2 class="h6 text-secondary">Últimas terminadas</h2>
+<table class="table table-sm"><thead><tr><th>Orden</th><th>Fecha</th><th>Operario</th><th class="num">Entrada</th><th class="num">R %</th><th class="num">M %</th><th>Estado</th></tr></thead><tbody>
+{% for o in recientes %}<tr><td><a href="{% url 'desposte:orden' o.pk %}">{{ o.numero }}</a></td><td>{{ o.fin|date:"d/m/Y H:i" }}</td><td>{{ o.operario }}</td><td class="num">{{ o.resultado.peso_entrada|kg }}</td><td class="num">{{ o.resultado.rendimiento|num:2 }}</td><td class="num">{{ o.resultado.merma|num:2 }}</td><td>{% include "desposte/_estado.html" with o=o %}</td></tr>
+{% empty %}<tr><td colspan="7" class="text-secondary">Sin órdenes.</td></tr>{% endfor %}</tbody></table>
+{% endblock %}

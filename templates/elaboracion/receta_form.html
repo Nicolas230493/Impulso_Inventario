@@ -1,0 +1,14 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<h1 class="h4 mb-3">{% if receta %}Editar {{ receta }} (se crea la versión {{ receta.version|add:1 }}){% else %}Nueva receta{% endif %}</h1>
+<form method="post">{% csrf_token %}
+<div class="card card-body mb-3" style="max-width:1000px">{% include "nucleo/_campos.html" %}</div>
+{{ lineas.management_form }}{% if lineas.non_form_errors %}<div class="alert alert-danger">{{ lineas.non_form_errors|join:" " }}</div>{% endif %}
+<h2 class="h6">Insumos por tanda (en la unidad base de cada insumo)</h2>
+<div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>Insumo</th><th>Cantidad</th><th>Merma teórica %</th><th>Sustituible por</th><th>Empaque</th><th>Quitar</th></tr></thead><tbody>
+{% for f in lineas %}<tr><td>{{ f.insumo }}{{ f.insumo.errors }}</td><td>{{ f.cantidad }}{{ f.cantidad.errors }}</td><td>{{ f.merma_teorica }}</td><td>{{ f.sustituible_por }}</td><td>{{ f.es_empaque }}</td><td>{{ f.DELETE }}</td></tr>{% endfor %}
+</tbody></table></div>
+<p class="small text-secondary">¿Faltan filas? Guardá y volvé a editar: cada guardado de una receta existente crea una versión nueva.</p>
+<button class="btn btn-primary">Guardar</button> <a class="btn btn-link" href="{% if receta %}{% url 'elaboracion:receta' receta.pk %}{% else %}{% url 'elaboracion:recetas' %}{% endif %}">Volver</a>
+</form>
+{% endblock %}

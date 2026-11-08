@@ -1,0 +1,8 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<h1 class="h4 mb-3">Módulos</h1>
+<table class="table table-sm align-middle" style="max-width:640px"><tbody>
+{% for m in modulos %}<tr><td>{{ m.get_modulo_display }}</td><td>{% if m.activo %}<span class="badge text-bg-success">Activo desde {{ m.desde|date:"d/m/Y" }}</span>{% else %}<span class="badge text-bg-secondary">Inactivo</span>{% endif %}</td>
+<td class="text-end"><form method="post" action="{% url 'empresas:modulo_cambiar' m.modulo %}">{% csrf_token %}<button class="btn btn-sm btn-outline-primary">{% if m.activo %}Desactivar{% else %}Activar{% endif %}</button></form></td></tr>{% endfor %}
+</tbody></table>
+{% endblock %}

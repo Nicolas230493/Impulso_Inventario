@@ -1,0 +1,11 @@
+{% extends "base/base.html" %}
+{% block contenido_simple %}
+<div class="mx-auto" style="max-width: 400px">
+  <h1 class="h4 mb-4 text-center">Impulso Inventario</h1>
+  <form method="post" class="card card-body">{% csrf_token %}
+    {% include "nucleo/_campos.html" %}
+    <button class="btn btn-primary w-100">Ingresar</button>
+    <a class="small mt-3 text-center" href="{% url 'usuarios:recuperar' %}">Olvidé mi contraseña</a>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "base/base.html" %}
+{% block contenido %}
+<h1 class="h4 mb-3">Importar productos</h1>
+{% if resultado %}
+  {% if resultado.errores %}
+  <div class="alert alert-danger"><strong>{{ resultado.errores|length }} filas inválidas.</strong> No se cargó nada. Corregí el archivo y volvé a subirlo.</div>
+  <table class="table table-sm"><thead><tr><th>Fila</th><th>Código</th><th>Problema</th></tr></thead><tbody>
+  {% for fila, codigo, error in resultado.errores %}<tr><td>{{ fila }}</td><td>{{ codigo }}</td><td>{{ error }}</td></tr>{% endfor %}</tbody></table>
+  {% else %}
+  <div class="alert alert-success">{{ resultado.filas }} filas válidas. ¿Confirmás la importación?</div>
+  <form method="post">{% csrf_token %}<input type="hidden" name="confirmar" value="1"><textarea name="contenido" hidden>{{ resultado.contenido }}</textarea><button class="btn btn-primary">Importar {{ resultado.filas }} productos</button></form>
+  {% endif %}
+{% endif %}
+<form method="post" enctype="multipart/form-data" class="card card-body mt-3" style="max-width:640px">{% csrf_token %}{% include "nucleo/_campos.html" %}<button class="btn btn-outline-primary">Validar archivo</button></form>
+{% endblock %}

@@ -1,0 +1,267 @@
+IMPULSO INVENTARIO — RESUMEN DE LO HECHO
+Actualizado al 08/11/2026 (incluye la carga de datos de supermercado y la copia de la base para pruebas)
+
+Sistema de inventario multiempresa para comercios de alimentos y retail en general (pollerías, carnicerías,
+supermercados, almacenes, ferreterías, indumentaria, electrónica, restaurantes, hoteles). Construido en Django 5,
+PostgreSQL, Celery/Redis, HTMX y Bootstrap, según «Impulso Inventario — Especificaciones por fases (copia 1).md».
+
+
+ESTADO GENERAL
+--------------
+- Implementado: Fases 0, 1, 2, 3, 4 y 5, y la Extensión A completa (bloques A1 a A11).
+- Pendiente: Fases 6 (gestión comercial / ventas), 7 (integraciones e IA) y 8 (comercialización SaaS).
+- Calidad: 179 tests automáticos. La regresión completa sin cobertura dio verde; falta correr la suite completa
+  con medición de cobertura (tarda más de 10 minutos). Linter (ruff) sin errores, migraciones al día.
+- Tamaño: 24 apps, 102 modelos, unas 149 rutas, ~18.800 líneas de Python (sin migraciones), más el comando de
+  carga del supermercado (~1.100 líneas entre comando y catálogo).
+- Todavía no hay ningún commit en git: todo el trabajo está sin versionar.
+
+
+NOVEDADES DE ESTA SESIÓN (08/11/2026)
+=====================================
+
+1) SERVIDOR LEVANTADO
+---------------------
+- Docker Compose completo (web, db, redis, worker, beat) en http://localhost:8010
+  (comando: WEB_PORT=8010 docker compose up -d --build). Las migraciones corren solas al arrancar.
+
+2) SUPERADMINISTRADOR
+---------------------
+- Usuario: admin@demo.local      Contraseña: Admin-Impulso-2026
+- Es superusuario de Django (panel /admin/) y además administrador en todas las empresas, así que entra a la
+  Pollería Demo y al Súper Impulso desde la app.
+
+3) DEMO DE SUPERMERCADO «SÚPER IMPULSO» (comando nuevo)
+-------------------------------------------------------
+Comando: python manage.py cargar_supermercado [--dias 30] [--semilla 7]   (tarda ~30 minutos)
+Archivos: apps/nucleo/management/commands/cargar_supermercado.py
+          apps/nucleo/management/commands/_catalogo_supermercado.py (catálogo editable)
+
+Todo se carga a través de los servicios reales del sistema (los mismos que usan las pantallas), con un reloj
+simulado para que cada operación quede en su fecha. Así los vencimientos, el FEFO, la numeración, la auditoría
+y el Kardex son coherentes. Si algo falla, no queda nada a medias: todo corre en una sola transacción.
+
+Empresa: Supermercados Impulso S.A. («Súper Impulso»), rubro supermercado, con los módulos de inventario,
+compras, despiece, producción, trazabilidad, calidad y cadena de frío.
+
+Estructura:
+- 2 sucursales: Casa central (Ramos Mejía) y Sucursal Norte (Vicente López).
+- 20 depósitos: depósito general, salón, cámaras de frescos, congelados y carnes, heladeras y freezers de salón,
+  verdulería, mostrador de carnicería, salas de despiece (vacuno y aves), panadería, rotisería, fiambrería,
+  depósito de insumos, envases vacíos, sector de limpieza; en Norte: salón, heladeras y depósito.
+- Ubicaciones de góndola (G01, G02…) asignadas a cada producto.
+- 4 centros de costo: limpieza del local, cocina de rotisería, administración, cafetería del personal.
+
+Catálogo (739 productos en la empresa):
+- 670 productos de reventa en 12 categorías con subcategorías:
+  Almacén seco (207), Bebidas (90), Limpieza (74), Perfumería y bebés (63), Lácteos (53), Congelados (36),
+  Golosinas (35), Frutas y verduras (30, por kg), Panificados envasados (24), Bazar (23), Fiambres (19),
+  Mascotas (16).
+- Marcas argentinas reales; costos de referencia en pesos y precio de venta calculado por la regla de precio de
+  cada categoría (markup + IVA + redondeo a $10). IVA 21 % o 10,5 % según el rubro.
+- Productos frescos con lote y vencimiento (vida útil por subcategoría); frutas y verduras por kg con venta
+  mínima de 100 g.
+- Código EAN-13 por producto y bulto x6 / x12 con DUN-14 en los de mayor rotación. Los códigos tienen dígito
+  verificador válido pero son de demostración, no los de los productos reales.
+- Stock mínimo y máximo por producto (alimentan la sugerencia de pedido).
+- Más los productos de producción propia: carnicería vacuna y porcina, aves, panadería, rotisería, fiambrería,
+  insumos y empaques, más el envase retornable y dos combos.
+
+Terceros:
+- 14 proveedores ficticios (uno por rubro: almacén, bebidas, lácteos, fiambres, congelados, limpieza,
+  perfumería, golosinas, mercado de frutas y verduras, panificados, bazar y mascotas, frigorífico, avícola,
+  insumos) con CUIT válido, contacto, habilitación sanitaria y calificación. Cada producto está vinculado
+  a su proveedor con código y último precio.
+- 5 clientes (consumidor final, bar, rotisería, club, kiosco).
+
+30 días de operación simulada (del 07/10 al 08/11/2026):
+- Compras: 49 órdenes de compra enviadas y recibidas. La compra inicial cubre todo el catálogo y después hay
+  reposición periódica, que en los frescos depende de la vida útil (frutas y verduras cada 5 días, lácteos
+  semanal, etc.).
+- Reposición de góndola diaria desde depósito/cámaras al salón y envíos a la Sucursal Norte: 206 transferencias.
+- Ventas: cierre de caja diario por sucursal, con demanda según rotación, día de la semana y FEFO (60 cierres),
+  más ventas a cuenta corriente al Bar El Farolito con envases retornables (saldo de envases).
+- Los lotes vencen solos día a día (como la tarea programada) y quedan vencidos en stock para descartar.
+
+Procesos cargados al día de hoy:
+- Producción: 4 medias reses identificadas (2 cuarteadas y despostadas en dos etapas), desposte de res porcina,
+  120 pollos (60 despostados con temperatura del sector), fraccionado de 3 hormas de tybo, elaboración de pan
+  francés, chorizo (con los recortes del cerdo), milanesas (con la nalga propia) y queso rallado (con los
+  recortes de horma); cortes pasados al mostrador.
+- Inventario: merma por rotura autorizada por el dueño, AJUSTE NEGATIVO PENDIENTE DE AUTORIZACIÓN (a propósito,
+  para probar el flujo), consumo interno con centro de costo, devolución de yogures al proveedor, devolución de
+  cliente, descarte de mercadería vencida (quedan algunos lotes vencidos sin descartar para ver la alerta),
+  inventario físico parcial aprobado en el salón, conteo cíclico abierto en el depósito.
+- Precios: actualización masiva +4 % en Bebidas (con historial y etiquetas pendientes; se puede deshacer).
+- Compras en curso: orden en borrador generada desde la sugerencia de pedido (limpieza), dos órdenes enviadas sin
+  recibir (almacén y golosinas) y una parcialmente recibida (fiambres) con una línea observada (lote bloqueado).
+- Kits y envases: combo virtual Fernet + Coca-Cola, 5 canastas navideñas armadas, devolución de envases vacíos.
+- Cadena de frío: 7 cámaras/exhibidoras con registros cada 4 h durante 7 días; un corte de frío resuelto con
+  acción correctiva y una alerta abierta en la Sucursal Norte.
+- Calidad: inspecciones de recepción (una observada), no conformidad cerrada y otra abierta, limpiezas POES con
+  verificación, documentos (habilitación municipal, análisis de agua, certificados de proveedores; uno vence en
+  15 días).
+- Trazabilidad: retiro preventivo abierto sobre un lote de fiambres.
+- Conciliación de stock contra Kardex: 3.415 filas revisadas, 0 diferencias. Sin stock negativo.
+
+Usuarios del Súper Impulso (contraseña demo-impulso-2026):
+  dueno@super.local            Dueño (todos los permisos)
+  encargado@super.local        Encargado de sucursal (Casa central)
+  encargado.norte@super.local  Encargado de sucursal (Sucursal Norte)
+  supervisor@super.local       Supervisor de producción
+  carnicero@super.local        Operario
+  panadero@super.local         Operario
+  cajero@super.local           Vendedor/Cajero
+  calidad@super.local          Calidad
+  contador@super.local         Solo lectura
+
+Decisión tomada: como todavía no existe el módulo de ventas (Fase 6) y el rol cajero no tiene permiso para
+confirmar movimientos de stock, las ventas se registran como «cierre de caja» sin chequear permisos. Es lo que
+haría una integración con el punto de venta.
+
+4) COPIA DE LA BASE PARA PRUEBAS (NO VA AL COMMIT)
+--------------------------------------------------
+- Archivo: datos_prueba/impulso_demo_2026-11-08.dump (formato custom de pg_dump, 1,9 MB).
+- Contiene: Pollería Demo + Súper Impulso, 756 productos, 53.208 líneas de movimiento, 14 usuarios.
+  Se verificó restaurándola en una base temporal.
+- Excluida de git (.gitignore: datos_prueba/ y *.dump) y de la imagen Docker (.dockerignore).
+- Para restaurarla sobre la base del docker compose (REEMPLAZA los datos actuales):
+    docker compose exec -T db pg_restore -U impulso -d impulso --clean --if-exists --no-owner \
+        < datos_prueba/impulso_demo_2026-11-08.dump
+- Para restaurarla en una base aparte:
+    docker compose exec -T db createdb -U impulso impulso_pruebas
+    docker compose exec -T db pg_restore -U impulso -d impulso_pruebas --no-owner \
+        < datos_prueba/impulso_demo_2026-11-08.dump
+
+
+LO IMPLEMENTADO EN SESIONES ANTERIORES
+======================================
+
+CONVENCIONES QUE CUMPLE TODO EL SISTEMA
+---------------------------------------
+- Multiempresa: cada dato pertenece a una empresa. Sin empresa activa, las consultas fallan en vez de devolver todo.
+  Cada pantalla y la API tienen pruebas de aislamiento (ID adivinado de otra empresa = 404).
+- Kardex inmutable: el stock solo cambia por movimientos confirmados; las correcciones son contramovimientos.
+- Decimales fijos con redondeo «half up»; prorrateos que cuadran al centavo.
+- Lógica solo en services.py (vistas, API y tareas usan los mismos servicios).
+- Auditoría con motivo obligatorio e historial de cambios de los maestros.
+- Módulos activables por empresa y permisos por rol (dueño, administrador, encargado, supervisor de producción,
+  operario, vendedor, calidad, lectura).
+- Horario de Buenos Aires y formato argentino (1.234,56) en pantalla.
+
+FASE 0 — FUNDACIONES
+--------------------
+- Empresas, sucursales, configuración, módulos activables; usuarios con email y MFA (TOTP); roles y membresías.
+- Auditoría, numeradores correlativos con bloqueo, máquinas de estado, menú según módulo y permiso.
+- Exportación a CSV, Excel y PDF. Docker Compose (web, db, redis, worker, beat) y CI en GitHub Actions.
+
+FASE 1 — NÚCLEO DE INVENTARIO
+-----------------------------
+- Productos, categorías, marcas, unidades y conversiones, códigos de barras, importación CSV.
+- Depósitos por sucursal, stock materializado, costo promedio ponderado, reservas.
+- Entradas, salidas, transferencias, ajustes con autorización por umbral, reversión.
+- Kardex por producto/depósito/lote, conciliación nocturna stock vs. Kardex. API REST.
+
+FASE 2 — COMPRAS, RECEPCIÓN Y LOTES
+-----------------------------------
+- Proveedores y precios, órdenes de compra, recepciones con costos adicionales prorrateados (flete, etc.).
+- Lotes con FEFO, bloqueo y liberación, vencimientos automáticos (tarea diaria).
+- Devoluciones a proveedor, inventario físico con aprobación, reporte de diferencias.
+
+FASE 3 — DESPOSTE DE POLLO (motor de transformación)
+----------------------------------------------------
+- Motor genérico N entradas → N salidas, con plantillas versionadas de rendimientos.
+- Pantallas de operario (pesajes) y supervisor; el balance debe cerrar al gramo con diferencias clasificadas.
+- Merma normal absorbida y anormal a pérdida; reparto de costos por peso o por valor de venta.
+- Doble firma si un corte sale de tolerancia; reversión segura; tablero y reportes. Precarga de pollería.
+
+EXTENSIÓN A — MERCADERÍA GENERAL MULTIRUBRO
+-------------------------------------------
+- Perfil de control por producto (lote, vencimiento, variantes, serie, kit, retornable, por medida, consignación,
+  uso interno, bien en circulación), con combinaciones inválidas rechazadas.
+- A1: presentaciones (unidad, pack, bulto), dos costos (promedio y reposición), reglas de precio con markup, IVA y
+  redondeo, actualización masiva con vista previa y deshacer, listas de proveedores (importación en segundo plano),
+  cola de etiquetas, vencimientos sin lote, sugerencia de pedido en bultos, alta rápida por escaneo, búsqueda
+  instantánea, recepción por escaneo de bultos (contra orden o libre).
+- A2: variantes talle × color con SKU y código propios, curvas de talles; compra, transferencia y conteo en matriz;
+  ventas por variante (qué se agota primero).
+- A3: números de serie e IMEI, garantía, envío y regreso de service.
+- A4: kits virtuales (combos) y armados (canastas) con trazabilidad de componentes.
+- A5: envases retornables con saldo por cliente y proveedor.
+- A6: venta por medida y a granel, rollos/piezas con retazos, etiquetas de balanza.
+- A7: consignación recibida y entregada, con liquidaciones.
+- A8: consumo interno por centro de costo, pedidos internos con aprobación, niveles par.
+- A9: bienes en circulación (blancos, vajilla, herramientas): lavandería, préstamos, bajas.
+- A10: atributos por categoría y productos equivalentes.
+- A11: clasificación ABC, conteo cíclico, indicadores (rotación, exactitud, inmovilizado, quiebres).
+- Precargas por rubro: almacén, distribuidora, ferretería, indumentaria, electrónica, restaurante, hotel,
+  pollería y supermercado.
+
+FASE 4 — PRODUCCIÓN GENERAL (estilo supermercado)
+-------------------------------------------------
+- Despiece en etapas con piezas identificadas (media res, cuarto, res porcina, horma de queso): el cuarteo genera
+  cuartos que siguen identificados; rendimiento por pieza a través de todas sus etapas.
+- Elaboración con recetas versionadas (panadería, rotisería, carnicería, fiambrería): teórico × tandas, consumo
+  real, sustitutos permitidos, desvío con tolerancia, insumos por FEFO, lote elaborado con todos sus lotes de
+  origen, subproducto opcional.
+- Costos de proceso: conceptos directos e indirectos, tarifas por orden, kg, hora o unidad, por sucursal y tipo;
+  empaques (bandejas, film) como insumos; cierre mensual tarifado vs. real.
+- Rentabilidad: margen bruto por producto contra precio sin IVA, con alerta bajo umbral.
+- Precarga «supermercado»: vacuno (cuarteo + despiece de cuartos), porcino, fraccionado de horma y recetas de pan,
+  milanesas, chorizo y queso rallado.
+- «Desposte» pasó a llamarse «Despiece» en la interfaz.
+
+FASE 5 — TRAZABILIDAD, CALIDAD Y CADENA DE FRÍO
+-----------------------------------------------
+- Trazabilidad: grafo de lotes recorrido con consultas recursivas de PostgreSQL. Hacia atrás (proveedor,
+  recepción, remito, temperatura, órdenes), interna (entradas, salidas, mermas) y hacia adelante (derivados con
+  stock actual por sucursal y depósito y sus movimientos). Árbol navegable e informe PDF para la autoridad
+  sanitaria. 510 derivados en 3 niveles responden en menos de 2 segundos.
+- Retiros de producto: un botón bloquea el lote y todos sus derivados en todas las sucursales; lista dónde hay
+  stock y qué depósitos recibieron; registra descarte, devolución, liberación (solo Calidad, con motivo) y notas;
+  se cierra solo cuando no queda stock retenido.
+- Cadena de frío: perfiles de conservación precargados solo con referencias citadas (ANMAT / SENASA), a confirmar
+  por la empresa; cámaras con rango y frecuencia; registro rápido para tablet; fuera de rango = alerta + acción
+  correctiva obligatoria + bloqueo opcional de lotes; alerta de «cámara sin registro».
+- Calidad: plantillas de control con ítems críticos, inspecciones (con foto) que abren no conformidades solas,
+  no conformidades con acción correctiva y verificación de eficacia, limpieza POES verificada por otra persona,
+  documentos con vencimiento (alerta 30 días antes).
+- Alertas: en el tablero y por email; revisión automática cada hora (Celery Beat).
+- Perfil de negocio: actividades declaradas (venta, despiece de aves, despostadero, elaboración, fraccionamiento,
+  faena…). Ocultan lo que no corresponde y, con despiece de aves, exigen la temperatura del sector en cada orden.
+  El sistema nunca muestra a la empresa como habilitada o certificada.
+
+
+PENDIENTES CONOCIDOS
+--------------------
+- Correr la suite completa con cobertura y registrar los números (mínimo pedido: 85 % en servicios).
+- Primer commit del proyecto (sin la carpeta datos_prueba/).
+- El contenedor web que está corriendo se armó antes de agregar cargar_supermercado. Para que el comando quede
+  dentro de la imagen: docker compose up -d --build.
+- Mails: el servidor no tiene SMTP configurado; las alertas se ven en el tablero pero el envío por correo falla
+  (queda registrado en el log). Configurar EMAIL_HOST o usar EMAIL_BACKEND de consola en desarrollo.
+- Row Level Security de PostgreSQL como segunda capa de aislamiento (hoy: manager + middleware + pruebas).
+- Lectura directa de balanzas y sensores de temperatura (Fase 7); avisos por WhatsApp (Fase 7).
+- Trazabilidad hasta el cliente final y ventas con detalle (Fase 6). Con el módulo de ventas, las ventas de la
+  demo deberían pasar a registrarse con permisos de cajero.
+- Botón para cargar empaques como insumo en la pantalla de despiece (el servicio ya existe); edición de tarifas.
+- Preguntas abiertas del anexo B de la especificación (modo sin conexión, pilotos, ARCA, hosting).
+
+
+CÓMO LEVANTARLO
+---------------
+  cp .env.example .env
+  WEB_PORT=8010 docker compose up -d --build
+  Opción A, restaurar la base de pruebas (recomendado, inmediato): ver el punto 4.
+  Opción B, cargar desde cero:
+    docker compose exec web python manage.py cargar_demo          (pollería, segundos)
+    docker compose exec web python manage.py cargar_supermercado  (supermercado, ~30 minutos)
+  Abrir http://localhost:8010
+    Superadmin:     admin@demo.local / Admin-Impulso-2026  (solo existe en la base restaurada; si cargás desde
+                    cero, crealo con: docker compose exec web python manage.py createsuperuser)
+    Pollería Demo:  dueno@, supervisor@, operario@, calidad@demo.local / demo-impulso-2026
+    Súper Impulso:  usuarios @super.local de arriba / demo-impulso-2026
+
+Tests locales:
+  docker start impulso-inv-pg
+  .venv/bin/pytest
